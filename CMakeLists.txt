@@ -31,21 +31,21 @@ find_package(OpenCL REQUIRED)
 # calls. Ideally we'd use OpenBLAS is possible and fall back to
 # not doing those calls if it's not present.
 if(NOT APPLE)
-  set(BLA_VENDOR OpenBLAS)
+    set(BLA_VENDOR OpenBLAS)
 endif()
 if(USE_BLAS)
-  message(STATUS "Looking for system BLAS/OpenBLAS library.")
-  find_package(BLAS REQUIRED)
-  find_path(BLAS_INCLUDE_DIRS openblas_config.h
-    /usr/include
-    /usr/local/include
-    /usr/include/openblas
-    /opt/OpenBLAS/include
-    /usr/include/x86_64-linux-gnu
-    $ENV{BLAS_HOME}/include)
+    message(STATUS "Looking for system BLAS/OpenBLAS library.")
+    find_package(BLAS REQUIRED)
+    find_path(BLAS_INCLUDE_DIRS openblas_config.h
+            /usr/include
+            /usr/local/include
+            /usr/include/openblas
+            /opt/OpenBLAS/include
+            /usr/include/x86_64-linux-gnu
+            $ENV{BLAS_HOME}/include)
     add_definitions(-DUSE_BLAS)
 else()
-message(STATUS "Using built-in matrix library.")
+    message(STATUS "Using built-in matrix library.")
 endif()
 find_package(Qt5Core)
 
@@ -54,36 +54,36 @@ set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 # See if we can set optimization flags as expected.
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(GccSpecificFlags 1)
+    set(GccSpecificFlags 1)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-  set(GccSpecificFlags 1)
+    set(GccSpecificFlags 1)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  set(GccSpecificFlags 1)
+    set(GccSpecificFlags 1)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(GccSpecificFlags 0)
+    set(GccSpecificFlags 0)
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  set(GccSpecificFlags 0)
+    set(GccSpecificFlags 0)
 endif()
 
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE RELEASE)
+    set(CMAKE_BUILD_TYPE RELEASE)
 endif(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 
 if(GccSpecificFlags)
-  set(GCC_COMPILE_FLAGS "-Wall -Wextra -ffast-math -flto -march=native")
-  set(GCC_DISABLED_WARNING_COMPILE_FLAGS "-Wno-ignored-attributes -Wno-maybe-uninitialized \
+    set(GCC_COMPILE_FLAGS "-Wall -Wextra -ffast-math -flto -march=native")
+    set(GCC_DISABLED_WARNING_COMPILE_FLAGS "-Wno-ignored-attributes -Wno-maybe-uninitialized \
       -Wno-mismatched-tags")
-  set(GCC_FLAGS "${GCC_COMPILE_FLAGS} ${GCC_DISABLED_WARNING_COMPILE_FLAGS}")
-  set(CMAKE_CXX_FLAGS_DEBUG "${GCC_FLAGS} -g -Og")
-  set(CMAKE_CXX_FLAGS_RELEASE "${GCC_FLAGS} -g -O3 -DNDEBUG")
-  set(CMAKE_EXE_LINKER_FLAGS "-flto -g")
+    set(GCC_FLAGS "${GCC_COMPILE_FLAGS} ${GCC_DISABLED_WARNING_COMPILE_FLAGS}")
+    set(CMAKE_CXX_FLAGS_DEBUG "${GCC_FLAGS} -g -Og")
+    set(CMAKE_CXX_FLAGS_RELEASE "${GCC_FLAGS} -g -O3 -DNDEBUG")
+    set(CMAKE_EXE_LINKER_FLAGS "-flto -g")
 endif(GccSpecificFlags)
 
 if(USE_CPU_ONLY)
-  add_definitions(-DUSE_CPU_ONLY)
+    add_definitions(-DUSE_CPU_ONLY)
 endif()
 if(USE_HALF)
-  add_definitions(-DUSE_HALF)
+    add_definitions(-DUSE_HALF)
 endif()
 
 set(IncludePath "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/src/Eigen")
@@ -101,9 +101,11 @@ if(APPLE)
     include_directories("/System/Library/Frameworks/Accelerate.framework/Versions/Current/Headers")
 endif()
 
+set(server_MAIN "${SrcPath}/server/server.cpp")
 set(leelaz_MAIN "${SrcPath}/Leela.cpp")
-file(GLOB leelaz_SRC "${SrcPath}/*.cpp")
+file(GLOB leelaz_SRC "${SrcPath}/*.cpp"  "${SrcPath}/server/*.hpp"  "${SrcPath}/server/*.cpp")
 list(REMOVE_ITEM leelaz_SRC ${leelaz_MAIN})
+list(REMOVE_ITEM leelaz_SRC ${server_MAIN})
 
 # Reuse for leelaz and gtest
 add_library(objs OBJECT ${leelaz_SRC})
@@ -116,6 +118,7 @@ target_link_libraries(leelaz ${OpenCL_LIBRARIES})
 target_link_libraries(leelaz ${ZLIB_LIBRARIES})
 target_link_libraries(leelaz ${CMAKE_THREAD_LIBS_INIT})
 install(TARGETS leelaz DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_subdirectory(Simple-Web-Server)
 
 if(Qt5Core_FOUND)
     if(NOT Qt5Core_VERSION VERSION_LESS "5.3.0")
@@ -129,12 +132,15 @@ else()
     message(WARNING "Qt is not found, build for `autogtp` and `validation` is disabled")
 endif()
 
+# HTTP server
+add_executable(server ${server_MAIN} $<TARGET_OBJECTS:objs>)
+
 # Google Test below
 file(GLOB tests_SRC "${SrcPath}/tests/*.cpp")
 
 add_executable(tests ${tests_SRC} $<TARGET_OBJECTS:objs>)
 if(GccSpecificFlags)
-  target_compile_options(tests PRIVATE "-Wno-unused-variable")
+    target_compile_options(tests PRIVATE "-Wno-unused-variable")
 endif()
 
 target_link_libraries(tests ${Boost_LIBRARIES})
