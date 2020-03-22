@@ -119,6 +119,7 @@ target_link_libraries(leelaz ${ZLIB_LIBRARIES})
 target_link_libraries(leelaz ${CMAKE_THREAD_LIBS_INIT})
 install(TARGETS leelaz DESTINATION ${CMAKE_INSTALL_BINDIR})
 add_subdirectory(Simple-Web-Server)
+add_subdirectory(nlohmann_json)
 
 if(Qt5Core_FOUND)
     if(NOT Qt5Core_VERSION VERSION_LESS "5.3.0")
@@ -134,6 +135,17 @@ endif()
 
 # HTTP server
 add_executable(server ${server_MAIN} $<TARGET_OBJECTS:objs>)
+
+target_link_libraries(server ${Boost_LIBRARIES})
+target_link_libraries(server ${BLAS_LIBRARIES})
+target_link_libraries(server ${OpenCL_LIBRARIES})
+target_link_libraries(server ${ZLIB_LIBRARIES})
+target_link_libraries(server nlohmann_json::nlohmann_json)
+
+set_target_properties(server PROPERTIES
+        CXX_STANDARD 17
+        CXX_EXTENSIONS ON
+        )
 
 # Google Test below
 file(GLOB tests_SRC "${SrcPath}/tests/*.cpp")

@@ -12,3 +12,8 @@ leelaz_opencl_tuning
 /build-validation-*
 .vs/
 build/
+**/.DS_Store
+cmake-build-debug/
+.idea/
+client/node_modules
+client/package-lock.json
