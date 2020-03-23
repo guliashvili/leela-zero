@@ -54,10 +54,11 @@ int main(int argc, char *argv[]) {
 
       try {
         auto j3 = json::parse(request->content);
+        bool isBlack = false;
         for (const auto &move : j3.at("moves")) {
           const auto x = move.at("x").get<int>();
           const auto y = move.at("y").get<int>();
-          const auto isBlack = move.at("isBlack").get<int>();
+          isBlack = move.at("isBlack").get<bool>();
 
           const auto vertex = game->board.get_vertex(x, y);
           game->play_move((int) !isBlack, vertex);
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
           GTP::execute(*game, "genmove " +  (game->board.black_to_move() ? string("b") : string("w")));
         }
         const auto [x,y]  = game->board.get_xy(game->get_last_move());
-        const auto answer = json({"move", {{"x", x}, {"y", y}}}).dump();
+        const auto answer = json({{"move", {{"x", x}, {"y", y}, {"isBlack", !isBlack}}}}).dump();
 
         response->write(answer);
       }
