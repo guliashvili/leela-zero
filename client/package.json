@@ -2,20 +2,58 @@
   "name": "client",
   "version": "1.0.0",
   "description": "Go game client",
-  "main": "index.js",
+  "main": "index.cjs",
+  "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "build": "webpack -p --config   webpack.config.cjs",
+    "start": "webpack-dev-server -d --content-base ./public --config webpack.config.cjs",
+    "lint": "tsc --noEmit && eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsc --noEmit && lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": "eslint --cache --fix"
   },
   "author": "Giorgi Guliashvili",
   "license": "ISC",
   "dependencies": {
     "axios": "latest",
     "express": "latest",
+    "react": "latest",
+    "react-dom": "latest",
     "socket.io": "latest"
   },
   "devDependencies": {
+    "stylelint": "latest",
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "eslint-plugin-react": "latest",
+    "webpack-dev-server": "latest",
+    "@babel/cli": "latest",
+    "@babel/core": "latest",
+    "@babel/plugin-proposal-class-properties": "latest",
+    "@babel/preset-env": "latest",
+    "@babel/preset-typescript": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
     "axios": "latest",
+    "eslint": "latest",
+    "eslint-config-prettier": "latest",
+    "eslint-plugin-prettier": "latest",
     "express": "latest",
-    "socket.io": "latest"
+    "husky": "latest",
+    "lint-staged": "latest",
+    "prettier": "latest",
+    "socket.io": "latest",
+    "source-map-loader": "latest",
+    "ts-loader": "latest",
+    "typescript": "latest",
+    "webpack": "latest",
+    "webpack-cli": "latest"
   }
 }

@@ -15,5 +15,9 @@ build/
 **/.DS_Store
 cmake-build-debug/
 .idea/
+client/lib
+client/public/build
 client/node_modules
+client/yarn.lock
+client/package.json.lock
 client/package-lock.json
