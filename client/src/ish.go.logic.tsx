@@ -1,11 +1,9 @@
-import { View } from "./ish.go.view.h5";
 import {
   PointState,
   MoveError,
   Point,
   MoveResult,
   Player,
-  Color,
   GameStatus,
 } from "./ish.go";
 import { cloneDeep, isEqual } from "lodash-es";
@@ -30,6 +28,9 @@ export class GameState {
     }
     this.previousBoard = cloneDeep(this.board);
   }
+  getBoardSize(): number {
+    return this.board.length;
+  }
   getPointStateAt(point: Point): PointState {
     return this.board[point.column][point.row];
   }
@@ -46,12 +47,27 @@ export class GameState {
   setBoardCopy(board: PointState[][]): void {
     this.board = cloneDeep(board);
   }
+  getNeighborsAt(point: Point): Point[] {
+    const steps = [
+      [-1, 0],
+      [0, -1],
+      [1, 0],
+      [0, 1],
+    ];
+    return steps
+      .map((step) => new Point(point.row + step[0], point.column + step[1]))
+      .filter(
+        (point) =>
+          Math.min(point.row, point.column) >= 0 &&
+          Math.max(point.row, point.column) < this.getBoardSize()
+      );
+  }
   getChainPoints(point: Point, chainPoints: Point[]): Point[] {
-    const pState = View.gGameState.getPointStateAt(point);
+    const pState = this.getPointStateAt(point);
     chainPoints.push(point);
 
-    for (const nPoint of point.getNeighborsAt(View.BOARD_SIZE)) {
-      const nState = View.gGameState.getPointStateAt(nPoint);
+    for (const nPoint of this.getNeighborsAt(point)) {
+      const nState = this.getPointStateAt(nPoint);
       if (pState === nState && !nPoint.isInArray(chainPoints)) {
         this.getChainPoints(nPoint, chainPoints);
       }
@@ -62,8 +78,8 @@ export class GameState {
     const chain = this.getChainPoints(point, []);
     const libPoints = new Set();
     for (const chainPoint of chain) {
-      for (const nPoint of chainPoint.getNeighborsAt(View.BOARD_SIZE)) {
-        const state = View.gGameState.getPointStateAt(nPoint);
+      for (const nPoint of this.getNeighborsAt(chainPoint)) {
+        const state = this.getPointStateAt(nPoint);
         if (state === PointState.EMPTY) {
           libPoints.add(nPoint);
         }
@@ -73,10 +89,10 @@ export class GameState {
   }
   getCapturedPoints(point: Point): Point[] {
     let capPoints: Point[] = [];
-    const pState = View.gGameState.getPointStateAt(point);
+    const pState = this.getPointStateAt(point);
 
-    for (const nPoint of point.getNeighborsAt(View.BOARD_SIZE)) {
-      const nState = View.gGameState.getPointStateAt(nPoint);
+    for (const nPoint of this.getNeighborsAt(point)) {
+      const nState = this.getPointStateAt(nPoint);
       if (nState !== pState && nState !== PointState.EMPTY) {
         if (
           !nPoint.isInArray(capPoints) &&
@@ -90,81 +106,61 @@ export class GameState {
     return capPoints;
   }
 
-  isValidMove(point: Point, player: Player): boolean {
+  isValidMove(point: Point, player: Player): MoveError | void {
     // Check if point is empty
-    if (View.gGameState.getPointStateAt(point) !== PointState.EMPTY) {
-      View.gGameState.moveError = MoveError.OCCUPIED;
-      return false;
+    if (this.getPointStateAt(point) !== PointState.EMPTY) {
+      return MoveError.OCCUPIED;
     }
 
-    let isValid = true;
-
     // Backup our board
-    const backupBoard = View.gGameState.getBoardCopy();
+    const backupBoard = this.getBoardCopy();
 
     // Place piece
-    View.gGameState.setPointStateAt(point, player.pointState);
+    this.setPointStateAt(point, player.pointState);
 
     // Check for captured pieces
     const captures = this.getCapturedPoints(point);
     if (captures.length > 0) {
       // Remove captured pieces
-      $.each(captures, function () {
-        View.gGameState.setPointStateAt(this, PointState.EMPTY);
-      });
+      captures.forEach((capture) =>
+        this.setPointStateAt(capture, PointState.EMPTY)
+      );
 
       // Check for repeating board state
-      if (!View.gGameState.isUniqueBoard()) {
-        View.gGameState.moveError = MoveError.REPEAT;
-        isValid = false;
+      if (!this.isUniqueBoard()) {
+        return MoveError.REPEAT;
       }
     } else if (this.getLibertyPoints(point) === 0) {
-      View.gGameState.moveError = MoveError.SUICIDE;
-      isValid = false;
+      return MoveError.SUICIDE;
     }
 
     // Restore our board
-    View.gGameState.setBoardCopy(backupBoard);
-
-    return isValid;
+    this.setBoardCopy(backupBoard);
   }
-  move(point: Point) {
-    const player = View.gGameState.currentPlayer;
-
-    // Clear previous move errors
-    View.gGameState.moveError = "";
+  move(point: Point): MoveResult | MoveError {
+    const player = this.currentPlayer;
 
     // Validate move
-    if (!this.isValidMove(point, player)) {
-      return null;
+    const moveError = this.isValidMove(point, player);
+    if (moveError) {
+      return moveError;
     }
 
     // Store previous board
-    View.gGameState.previousBoard = View.gGameState.getBoardCopy();
+    this.previousBoard = this.getBoardCopy();
 
     // Place piece
-    View.gGameState.setPointStateAt(point, player.pointState);
+    this.setPointStateAt(point, player.pointState);
 
     // Remove captured pieces (if any)
     const capturedPoints = this.getCapturedPoints(point);
-    $.each(capturedPoints, function () {
-      View.gGameState.setPointStateAt(this, PointState.EMPTY);
-    });
+    capturedPoints.forEach((capture) =>
+      this.setPointStateAt(capture, PointState.EMPTY)
+    );
 
     // Change turn
-    View.gGameState.currentPlayer =
-      player == View.gGameState.player1
-        ? View.gGameState.player2
-        : View.gGameState.player1;
+    this.currentPlayer = player === this.player1 ? this.player2 : this.player1;
 
     return new MoveResult(player, point, capturedPoints);
-  }
-
-  newGame(boardSize: number) {
-    View.gGameState = new GameState(
-      boardSize,
-      new Player(Color.BLACK, PointState.BLACK),
-      new Player(Color.WHITE, PointState.WHITE)
-    );
   }
 }

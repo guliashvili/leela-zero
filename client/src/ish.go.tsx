@@ -1,6 +1,3 @@
-import { cloneDeep, isEqual } from "lodash-es";
-import { View } from "./ish.go.view.h5";
-
 export enum Color {
   BLACK,
   WHITE,
@@ -31,7 +28,7 @@ export class MoveResult {
   constructor(
     public readonly player: Player,
     public readonly newPoint: Point,
-    public readonly capturedPoints: any
+    public readonly capturedPoints: Point[]
   ) {}
 }
 
@@ -40,21 +37,6 @@ export class MoveResult {
  */
 export class Point {
   constructor(public readonly row: number, public readonly column: number) {}
-  public getNeighborsAt(boardSize: number): Point[] {
-    const steps = [
-      [-1, 0],
-      [0, -1],
-      [1, 0],
-      [0, 1],
-    ];
-    return steps
-      .map((step) => new Point(this.row + step[0], this.column + step[1]))
-      .filter(
-        (point) =>
-          Math.min(point.row, point.column) >= 0 &&
-          Math.max(point.row, point.column) < boardSize
-      );
-  }
   public isInArray(array: Point[]): boolean {
     return (
       array.find(

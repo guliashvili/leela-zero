@@ -1,4 +1,11 @@
-import { Color, Player, Point, PointState } from "./ish.go";
+import {
+  MoveError,
+  Color,
+  Player,
+  Point,
+  PointState,
+  MoveResult,
+} from "./ish.go";
 import { GameState } from "./ish.go.logic";
 // import * as io from "socket.io-client";
 // Ish.Go namespace declaration
@@ -67,7 +74,7 @@ export namespace View {
     return point;
   }
 
-  function getCoordsFromPoint(point): Point {
+  function getCoordsFromPoint(point: Point): Point {
     return new Point(
       point.row * PIECE_SIZE + BOARD_PADDING,
       point.column * PIECE_SIZE + BOARD_PADDING
@@ -77,7 +84,7 @@ export namespace View {
   /**
    * Draws piece on canvas
    */
-  function drawPiece(point, color) {
+  function drawPiece(point: Point, color: Color): void {
     const coords = getCoordsFromPoint(point);
 
     const piece = new Image();
@@ -93,15 +100,15 @@ export namespace View {
     };
   }
 
-  function removePieces(points) {
-    let coords;
-    $.each(points, function () {
-      coords = getCoordsFromPoint(this);
-      context.clearRect(coords.row, coords.column, PIECE_SIZE, PIECE_SIZE);
-    });
+  function removePieces(points: Point[]) {
+    points
+      .map((point) => getCoordsFromPoint(point))
+      .forEach((point) =>
+        context.clearRect(point.row, point.column, PIECE_SIZE, PIECE_SIZE)
+      );
   }
 
-  function update(moveResult) {
+  function update(moveResult: MoveResult): void {
     if (moveResult) {
       // Draw only board changes
       drawPiece(moveResult.newPoint, moveResult.player.color);
@@ -109,25 +116,16 @@ export namespace View {
     }
   }
 
-  function placePiece(point) {
+  function placePiece(point: Point): boolean {
     const moveResult = gGameState.move(point);
 
-    // Check for empty MoveResult (indicates invalid move)
-    if (!moveResult) {
-      let alertMsg = "Invalid Move";
-
-      // Add specific message if present
-      if (gGameState.moveError) {
-        alertMsg += ":\n" + gGameState.moveError;
-      }
-
-      alert(alertMsg);
-      return false;
+    if (moveResult instanceof MoveResult) {
+      update(moveResult);
+      return true;
     }
-
-    // Redraw board changes as a result of the move
-    update(moveResult);
-    return true;
+    const alertMsg = `Invalid Move : ${moveResult}`;
+    alert(alertMsg);
+    return false;
   }
 
   // Tracks clicks on the board (canvas)
@@ -148,7 +146,7 @@ export namespace View {
   /**
    * Initializes a canvas and context for use in the View, but only if necessary
    */
-  function initCanvas(): void {
+  export function initCanvas(): void {
     canvas = document.getElementById("go-canvas");
 
     canvas.width = canvas.height = PIXEL_SIZE;
@@ -179,24 +177,6 @@ export namespace View {
     }
   }
 
-  function redraw(canvasElement) {
-    // Create canvas and context if necessary
-    if (!canvasElement) {
-      initCanvas();
-    }
-
-    drawBoard();
-  }
-
-  /**
-   * Starts a new game.
-   */
-  function startNewGame() {
-    gGameState.newGame(BOARD_SIZE);
-
-    redraw($("go-canvas"));
-  }
-
   export function init() {
     // Initialize game state
     gGameState = new GameState(
@@ -205,10 +185,11 @@ export namespace View {
       new Player(Color.WHITE, PointState.WHITE)
     );
 
-    redraw(null);
+    drawBoard();
   }
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  View.initCanvas();
   View.init();
 });
