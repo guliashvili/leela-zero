@@ -5,8 +5,9 @@
   "main": "index.cjs",
   "type": "module",
   "scripts": {
-    "build": "webpack -p --config   webpack.config.cjs",
+    "build": "webpack -p --config webpack.config.cjs",
     "start": "webpack-dev-server -d --content-base ./public --config webpack.config.cjs",
+    "watch": "webpack --watch --config webpack.config.cjs",
     "lint": "tsc --noEmit && eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
   "husky": {
@@ -20,8 +21,13 @@
   "author": "Giorgi Guliashvili",
   "license": "ISC",
   "dependencies": {
+    "@types/lodash": "^4.14.149",
+    "@types/lodash-es": "^4.17.3",
+    "@types/socket.io": "^2.1.4",
     "axios": "latest",
     "express": "latest",
+    "lodash": "^4.17.15",
+    "lodash-es": "^4.17.15",
     "react": "latest",
     "react-dom": "latest",
     "socket.io": "latest"
