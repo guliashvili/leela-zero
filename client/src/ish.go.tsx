@@ -15,20 +15,20 @@ export enum MoveError {
   SUICIDE = "The attempted move would result in a suicide.",
 }
 
-export enum GameStatus {
-  ACTIVE,
-  IDLE,
-  ENDED,
-}
-
 /**
  * OBJ: Defines changed points after a move is made.
  */
+export class Action {
+  constructor(
+    public readonly stateNow: PointState,
+    public readonly stateBefore: PointState,
+    public readonly point: Point
+  ) {}
+}
 export class MoveResult {
   constructor(
     public readonly player: Player,
-    public readonly newPoint: Point,
-    public readonly capturedPoints: Point[]
+    public readonly actions: Action[]
   ) {}
 }
 

@@ -1,19 +1,9 @@
-import {
-  MoveError,
-  Color,
-  Player,
-  Point,
-  PointState,
-  MoveResult,
-} from "./ish.go";
+import { Action, Color, MoveResult, Player, Point, PointState } from "./ish.go";
 import { GameState } from "./ish.go.logic";
-// import * as io from "socket.io-client";
 // Ish.Go namespace declaration
 
 // begin Ish.Go.View namespace
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace View {
-  // const socket = io("http://localhost:3000");
+namespace View {
   export const BOARD_SIZE = 19;
   const BOARD_PADDING = 6;
   const PIECE_SIZE = 27;
@@ -81,10 +71,7 @@ export namespace View {
     );
   }
 
-  /**
-   * Draws piece on canvas
-   */
-  function drawPiece(point: Point, color: Color): void {
+  function drawPiece(point: Point, color: Color) {
     const coords = getCoordsFromPoint(point);
 
     const piece = new Image();
@@ -100,19 +87,24 @@ export namespace View {
     };
   }
 
-  function removePieces(points: Point[]) {
-    points
-      .map((point) => getCoordsFromPoint(point))
-      .forEach((point) =>
-        context.clearRect(point.row, point.column, PIECE_SIZE, PIECE_SIZE)
-      );
+  function updateSquare(actions: Action[]) {
+    actions.forEach((action) => {
+      if (action.stateNow === PointState.EMPTY) {
+        const coords = getCoordsFromPoint(action.point);
+        context.clearRect(coords.row, coords.column, PIECE_SIZE, PIECE_SIZE);
+      } else {
+        drawPiece(
+          action.point,
+          action.stateNow === PointState.BLACK ? Color.BLACK : Color.WHITE
+        );
+      }
+    });
   }
 
   function update(moveResult: MoveResult): void {
     if (moveResult) {
       // Draw only board changes
-      drawPiece(moveResult.newPoint, moveResult.player.color);
-      removePieces(moveResult.capturedPoints);
+      updateSquare(moveResult.actions);
     }
   }
 
@@ -188,6 +180,9 @@ export namespace View {
     drawBoard();
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Listeners {}
 
 document.addEventListener("DOMContentLoaded", function () {
   View.initCanvas();

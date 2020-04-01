@@ -1,17 +1,16 @@
 import {
-  PointState,
+  Action,
   MoveError,
-  Point,
   MoveResult,
   Player,
-  GameStatus,
+  Point,
+  PointState,
 } from "./ish.go";
-import { cloneDeep, isEqual } from "lodash-es";
+import { cloneDeep } from "lodash-es";
 
 export class GameState {
-  public status = GameStatus.ACTIVE;
   private board: PointState[][];
-  public previousBoard: PointState[][];
+  private gameHistory: MoveResult[] = [];
   public currentPlayer: Player;
   constructor(
     public readonly boardSize: number,
@@ -26,7 +25,6 @@ export class GameState {
         this.board[i][j] = PointState.EMPTY;
       }
     }
-    this.previousBoard = cloneDeep(this.board);
   }
   getBoardSize(): number {
     return this.board.length;
@@ -38,11 +36,41 @@ export class GameState {
     this.board[point.column][point.row] = pointState;
   }
   isUniqueBoard(): boolean {
-    return !isEqual(this.board, this.previousBoard);
-  }
-  getBoardCopy(): PointState[][] {
-    const ret = cloneDeep(this.board);
-    return ret;
+    const first = this.gameHistory[this.gameHistory.length - 2];
+    const second = this.gameHistory[this.gameHistory.length - 1];
+    if (
+      first === undefined ||
+      second === undefined ||
+      first.actions.length !== 2 ||
+      second.actions.length !== 2
+    ) {
+      return true;
+    }
+    const removed1 = first.actions.filter(
+      (action) => action.stateNow === PointState.EMPTY
+    )[0].point;
+    const added1 = first.actions.filter(
+      (action) => action.stateNow !== PointState.EMPTY
+    )[0].point;
+    if (removed1 === null || added1 === null) {
+      return true;
+    }
+    const removed2 = second.actions.filter(
+      (action) => action.stateNow === PointState.EMPTY
+    )[0].point;
+    const added2 = second.actions.filter(
+      (action) => action.stateNow !== PointState.EMPTY
+    )[0].point;
+    if (removed2 === null || added2 === null) {
+      return true;
+    }
+
+    return !(
+      removed2.column === added1.column &&
+      removed2.row === added1.row &&
+      added2.column === removed1.column &&
+      added2.row === removed1.row
+    );
   }
   setBoardCopy(board: PointState[][]): void {
     this.board = cloneDeep(board);
@@ -106,61 +134,81 @@ export class GameState {
     return capPoints;
   }
 
-  isValidMove(point: Point, player: Player): MoveError | void {
+  isValidMove(): MoveError | void {
     // Check if point is empty
-    if (this.getPointStateAt(point) !== PointState.EMPTY) {
+    const actions = this.gameHistory[this.gameHistory.length - 1];
+    if (
+      actions.actions.some(
+        (action) =>
+          action.stateBefore !== PointState.EMPTY &&
+          action.stateNow !== PointState.EMPTY
+      )
+    ) {
       return MoveError.OCCUPIED;
     }
 
-    // Backup our board
-    const backupBoard = this.getBoardCopy();
-
-    // Place piece
-    this.setPointStateAt(point, player.pointState);
-
-    // Check for captured pieces
-    const captures = this.getCapturedPoints(point);
-    if (captures.length > 0) {
-      // Remove captured pieces
-      captures.forEach((capture) =>
-        this.setPointStateAt(capture, PointState.EMPTY)
-      );
-
-      // Check for repeating board state
-      if (!this.isUniqueBoard()) {
-        return MoveError.REPEAT;
-      }
-    } else if (this.getLibertyPoints(point) === 0) {
+    // Check for repeating board state
+    if (!this.isUniqueBoard()) {
+      return MoveError.REPEAT;
+    }
+    if (
+      actions.actions.some((action) => {
+        if (
+          action.stateBefore === PointState.EMPTY &&
+          action.stateNow !== PointState.EMPTY
+        ) {
+          return this.getLibertyPoints(action.point) === 0;
+        }
+        return false;
+      })
+    ) {
       return MoveError.SUICIDE;
     }
-
-    // Restore our board
-    this.setBoardCopy(backupBoard);
   }
   move(point: Point): MoveResult | MoveError {
     const player = this.currentPlayer;
-
-    // Validate move
-    const moveError = this.isValidMove(point, player);
-    if (moveError) {
-      return moveError;
-    }
-
-    // Store previous board
-    this.previousBoard = this.getBoardCopy();
-
-    // Place piece
+    const actionPlace = new Action(
+      this.currentPlayer.pointState,
+      this.getPointStateAt(point),
+      point
+    );
     this.setPointStateAt(point, player.pointState);
 
-    // Remove captured pieces (if any)
     const capturedPoints = this.getCapturedPoints(point);
+    const actionCapture = capturedPoints.map(
+      (capturedPoint) =>
+        new Action(
+          PointState.EMPTY,
+          this.getPointStateAt(capturedPoint),
+          capturedPoint
+        )
+    );
     capturedPoints.forEach((capture) =>
       this.setPointStateAt(capture, PointState.EMPTY)
     );
 
-    // Change turn
     this.currentPlayer = player === this.player1 ? this.player2 : this.player1;
-
-    return new MoveResult(player, point, capturedPoints);
+    const moveResult = new MoveResult(player, [...actionCapture, actionPlace]);
+    this.gameHistory.push(moveResult);
+    const moveError = this.isValidMove();
+    if (moveError !== undefined) {
+      this.moveBackwards();
+      return moveError;
+    }
+    return moveResult;
+  }
+  moveBackwards(): MoveResult | null {
+    const lastMove = this.gameHistory.pop();
+    if (lastMove === undefined) {
+      return null;
+    }
+    this.currentPlayer = lastMove.player;
+    return new MoveResult(
+      lastMove.player,
+      lastMove.actions.map((action) => {
+        this.setPointStateAt(action.point, action.stateBefore);
+        return new Action(action.stateBefore, action.stateNow, action.point);
+      })
+    );
   }
 }
