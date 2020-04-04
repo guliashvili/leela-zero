@@ -1,6 +1,9 @@
 import { Action, Color, MoveResult, Player, Point, PointState } from "./ish.go";
 import { GameState } from "./ish.go.logic";
 import { Controller } from "./controller";
+const imgPieceBlack = require("./imgs/piece-black.png");
+const imgPieceWhite = require("./imgs/piece-white.png");
+const imgBoard = require("./imgs/board.png");
 
 // Ish.Go namespace declaration
 
@@ -10,8 +13,6 @@ namespace View {
   const BOARD_PADDING = 6;
   const PIECE_SIZE = 27;
   const PIXEL_SIZE = 522;
-  const IMG_BLACK = "imgs/piece-black.png";
-  const IMG_WHITE = "imgs/piece-white.png";
 
   let canvas;
   let gGameState;
@@ -79,9 +80,9 @@ namespace View {
     const piece = new Image();
 
     if (color == Color.BLACK) {
-      piece.src = IMG_BLACK;
+      piece.src = imgPieceBlack;
     } else {
-      piece.src = IMG_WHITE;
+      piece.src = imgPieceWhite;
     }
 
     piece.onload = function () {
@@ -142,17 +143,12 @@ namespace View {
     canvas = document.getElementById("go-canvas");
 
     canvas.width = canvas.height = PIXEL_SIZE;
-    canvas.style.background = "transparent url(imgs/board.png) no-repeat 0 0";
+    canvas.style.background = `transparent url(${imgBoard}) no-repeat 0 0`;
 
     canvas.addEventListener("click", clickListener, false);
 
     context = canvas.getContext("2d");
   }
-
-  // socket.on("new move", (data) => {
-  //   console.log("got", data);
-  //   placePiece(new Point(data["x"], data["y"]));
-  // });
 
   function drawBoard() {
     context.clearRect(0, 0, PIXEL_SIZE, PIXEL_SIZE);
@@ -183,5 +179,6 @@ namespace View {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  console.log("givi im here");
   View.init();
 });

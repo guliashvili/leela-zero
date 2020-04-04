@@ -23,7 +23,7 @@ module.exports = {
     '@typescript-eslint/no-var-requires': 0,
     '@typescript-eslint/camelcase': 0
   },
-  ignorePatterns: ["node_modules/", "public/build/", "lib/", "dist/", ".idea/"],
+  ignorePatterns: ["node_modules/", "public/", "lib/", "dist/", ".idea/"],
   settings: {
     react: {
       version: "detect"
