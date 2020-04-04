@@ -42,15 +42,13 @@ using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 int main(int argc, char *argv[]) {
   HttpServer server;
   server.config.port = 1999;
-  std::cerr<<"aq 0"<<std::endl;
   server.resource["^/json$"]["POST"] = [argc, argv](shared_ptr<HttpServer::Response> response,
                                                     shared_ptr<HttpServer::Request> request) {
-    std::cerr<<"aq 1"<<std::endl;
+
       static auto game = init(argc, argv);
-      std::cerr<<"aq 3"<<std::endl;
+      std::cerr << "starteed "<<request->content.string() << std::endl;
       Training::clear_training();
       game->reset_game();
-      std::cerr<<"aq 4"<<std::endl;
 
       try {
         auto j3 = json::parse(request->content);
@@ -71,10 +69,11 @@ int main(int argc, char *argv[]) {
         }
         const auto [x,y]  = game->board.get_xy(game->get_last_move());
         const auto answer = json({{"move", {{"x", x}, {"y", y}, {"isBlack", !isBlack}}}}).dump();
-
-        response->write(answer);
+        *response << "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " << answer.length() << "\r\n\r\n"
+                  << answer;
       }
       catch (const exception &e) {
+        std::cerr<<e.what()<<std::endl;
         response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
       }
   };

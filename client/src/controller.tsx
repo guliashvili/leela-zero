@@ -1,5 +1,32 @@
-import io from "socket.io-client";
+import { GameState } from "./ish.go.logic";
+import { Point } from "./ish.go";
+const axios = require("axios").default;
 
-import { Listeners } from "./ish.go.view.h5";
-const socket = io("http://localhost:3000");
+export namespace Controller {
+  export async function getNextSuggestedMove(
+    gameState: GameState
+  ): Promise<Point> {
+    const gameHistory = gameState.gameHistory.map((move) => {
+      const action = move.actions.filter(
+        (action) => action.stateNow === move.player.pointState
+      )[0];
+      return {
+        x: action.point.row,
+        y: action.point.column,
+        isBlack: action.stateNow === 1,
+      };
+    });
 
+    const response = await axios
+      .post("/suggested_move", {
+        moves: gameHistory,
+      })
+      .catch((error) => console.log("response error", error));
+    console.log("givi response", response);
+
+    return new Point(
+      response["data"]["move"]["x"],
+      response["data"]["move"]["y"]
+    );
+  }
+}

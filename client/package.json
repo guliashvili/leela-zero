@@ -5,10 +5,9 @@
   "main": "index.cjs",
   "type": "module",
   "scripts": {
-    "build": "webpack -p --config webpack.config.cjs",
-    "start": "webpack-dev-server -d --content-base ./public --config webpack.config.cjs",
-    "watch": "webpack --watch --config webpack.config.cjs",
-    "lint": "tsc --noEmit && eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
+    "build-dev": "webpack -p --config webpack.config.cjs --mode=development",
+    "build-prod": "webpack -p --config webpack.config.cjs --mode=production",
+    "lint": "tsc --noEmit && eslint '**/*.{js,ts,tsx,cjs}' --quiet --fix"
   },
   "husky": {
     "hooks": {
@@ -23,21 +22,14 @@
   "dependencies": {
     "axios": "latest",
     "express": "latest",
-    "lodash-es":  "latest",
+    "lodash-es": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "socket.io": "latest",
-    "socket.io-client": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "stylelint": "latest",
-    "eslint-plugin-react": "latest",
-    "webpack-dev-server": "latest",
+    "@types/express": "latest",
     "@types/lodash": "latest",
     "@types/lodash-es": "latest",
-    "@types/socket.io": "latest",
-    "@types/socket.io-client": "latest",
-    "@types/express": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
@@ -46,12 +38,15 @@
     "eslint": "latest",
     "eslint-config-prettier": "latest",
     "eslint-plugin-prettier": "latest",
+    "eslint-plugin-react": "latest",
     "lint-staged": "latest",
     "prettier": "latest",
     "source-map-loader": "latest",
+    "stylelint": "latest",
     "ts-loader": "latest",
     "typescript": "latest",
     "webpack": "latest",
-    "webpack-cli": "latest"
+    "webpack-cli": "latest",
+    "webpack-dev-server": "latest"
   }
 }

@@ -1,5 +1,7 @@
 import { Action, Color, MoveResult, Player, Point, PointState } from "./ish.go";
 import { GameState } from "./ish.go.logic";
+import { Controller } from "./controller";
+
 // Ish.Go namespace declaration
 
 // begin Ish.Go.View namespace
@@ -12,7 +14,7 @@ namespace View {
   const IMG_WHITE = "imgs/piece-white.png";
 
   let canvas;
-  export let gGameState;
+  let gGameState;
   let context;
 
   // Given a mouse event, returns Coords relative to the canvas
@@ -108,7 +110,7 @@ namespace View {
     }
   }
 
-  function placePiece(point: Point): boolean {
+  export function placePiece(point: Point): boolean {
     const moveResult = gGameState.move(point);
 
     if (moveResult instanceof MoveResult) {
@@ -125,20 +127,18 @@ namespace View {
     const point = getPoint(e);
     if (point) {
       const isSuccess = placePiece(point);
-      // if (isSuccess) {
-      //   socket.emit("new move", {
-      //     x: point.row,
-      //     y: point.column,
-      //     isBlack: true,
-      //   });
-      // }
+      if (isSuccess) {
+        Controller.getNextSuggestedMove(gGameState).then((point) =>
+          placePiece(point)
+        );
+      }
     }
   }
 
   /**
    * Initializes a canvas and context for use in the View, but only if necessary
    */
-  export function initCanvas(): void {
+  function initCanvas(): void {
     canvas = document.getElementById("go-canvas");
 
     canvas.width = canvas.height = PIXEL_SIZE;
@@ -170,6 +170,7 @@ namespace View {
   }
 
   export function init() {
+    initCanvas();
     // Initialize game state
     gGameState = new GameState(
       19,
@@ -181,10 +182,6 @@ namespace View {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Listeners {}
-
 document.addEventListener("DOMContentLoaded", function () {
-  View.initCanvas();
   View.init();
 });

@@ -10,7 +10,7 @@ import { cloneDeep } from "lodash-es";
 
 export class GameState {
   private board: PointState[][];
-  private gameHistory: MoveResult[] = [];
+  public gameHistory: MoveResult[] = [];
   public currentPlayer: Player;
   constructor(
     public readonly boardSize: number,

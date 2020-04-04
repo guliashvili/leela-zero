@@ -1,49 +1,26 @@
-// Setup basic express server
-const express = require('express');
+const express = require("express");
+const path = require("path");
+const axios = require("axios");
+const port = process.env.PORT || 80;
+
 const app = express();
-const path = require('path');
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const port = process.env.PORT || 3000;
-const axios = require('axios')
+app.use(express.static(path.join(__dirname, "public")));
 
+app.use(express.json());
+app.post("/suggested_move", async function (req, res) {
+  const gameHistory = req.body;
+  console.log("givi history", gameHistory);
+  const data = await axios.post("http://127.0.0.1:1999/json", {
+    moves: gameHistory["moves"],
+    commandSpec: { command: "z" },
+  });
 
-server.listen(port, () => {
-    console.log('Server listening at port %d', port);
+  console.log("givi data", data.data);
+  return res.json(data.data);
 });
 
-// Routing
-app.use(express.static(path.join(__dirname, 'public')));
+const server = require("http").createServer(app);
 
-let gameHistory = [];
-
-io.on('connection', (socket) => {
-
-    // when the client emits 'new message', this listens and executes
-    socket.on('new move', (data) => {
-        gameHistory.push({x: data['x'], y: data['y'], isBlack: true});
-
-        axios
-            .post('http://127.0.0.1:1999/json', {
-                moves: gameHistory,
-                commandSpec: {command: "z"}
-            })
-            .then(res => {
-                const {x, y, isBlack} = res.data["move"];
-                gameHistory.push({x, y, isBlack});
-                console.log('send data', gameHistory);
-                socket.emit('new move', {
-                    x,
-                    y,
-                    isBlack
-                });
-                console.log('sent sock');
-            })
-            .catch(error => {
-                console.error(error)
-            })
-        // we tell the client to execute 'new message'
-
-    });
-
+server.listen(port, () => {
+  console.log(`Server listening at port ${port}`);
 });
