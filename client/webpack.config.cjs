@@ -1,6 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const nodeExternals = require("webpack-node-externals");
 
 const config = {
   entry: "./src/ish.go.view.h5.tsx",
@@ -10,9 +11,6 @@ const config = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
-  },
-  devServer: {
-    port: 8000,
   },
   module: {
     rules: [
@@ -30,6 +28,7 @@ const config = {
   externals: {
     react: "React",
     "react-dom": "ReactDOM",
+    ...nodeExternals(),
   },
   plugins: [
     new HtmlWebpackPlugin({

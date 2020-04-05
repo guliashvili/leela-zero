@@ -1,9 +1,9 @@
 import { Action, Color, MoveResult, Player, Point, PointState } from "./ish.go";
 import { GameState } from "./ish.go.logic";
 import { Controller } from "./controller";
-const imgPieceBlack = require("./imgs/piece-black.png");
-const imgPieceWhite = require("./imgs/piece-white.png");
-const imgBoard = require("./imgs/board.png");
+import imgPieceBlack from "./imgs/piece-black.png";
+import imgPieceWhite from "./imgs/piece-white.png";
+import imgBoard from "./imgs/board.png";
 
 // Ish.Go namespace declaration
 
@@ -144,6 +144,7 @@ namespace View {
 
     canvas.width = canvas.height = PIXEL_SIZE;
     canvas.style.background = `transparent url(${imgBoard}) no-repeat 0 0`;
+    console.log(canvas.style.background);
 
     canvas.addEventListener("click", clickListener, false);
 
@@ -179,6 +180,5 @@ namespace View {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("givi im here");
   View.init();
 });
