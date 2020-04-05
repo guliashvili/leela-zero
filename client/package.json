@@ -5,7 +5,7 @@
   "main": "index.cjs",
   "type": "module",
   "scripts": {
-    "build-dev": "webpack-dev-server --config webpack.config.cjs --mode=development --hot --open",
+    "build-dev": "webpack --config webpack.config.cjs --mode=development --watch",
     "build-prod": "webpack --config webpack.config.cjs --mode=production",
     "lint": "tsc --noEmit && eslint '**/*.{js,ts,tsx,cjs}' --quiet --fix"
   },
@@ -27,6 +27,7 @@
     "react-dom": "latest"
   },
   "devDependencies": {
+    "webpack-node-externals": "^1.7.2",
     "@types/express": "latest",
     "@types/lodash": "latest",
     "@types/lodash-es": "latest",
