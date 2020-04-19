@@ -21,20 +21,15 @@ const BOARD_PADDING = 6;
 export const Board = (props: Props): JSX.Element => {
   const [background] = useImage(imgBoard);
   const goState = useContext(GoStateContext);
-  function onClick(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
-    if (goState === undefined) {
-      return;
-    }
-    const { dispatch } = goState;
-    dispatch({ type: "playMove", move: point });
-    console.log(point, evt);
-  }
   if (goState === undefined) {
     return <div />;
   }
 
-  const { gameState } = goState;
-
+  const { dispatch, gameState } = goState;
+  function onClick(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
+    dispatch({ type: "playMove", move: point });
+    console.log(point, evt);
+  }
   return (
     <Stage width={props.boardSize} height={props.boardSize}>
       <Layer>
