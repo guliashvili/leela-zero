@@ -1,5 +1,5 @@
-import { GameState } from "./ish.go.logic";
-import { Point } from "./ish.go";
+import { GameState } from "./context/ish.go.logic";
+import { Point } from "./context/ish.go";
 const axios = require("axios").default;
 
 export namespace Controller {

@@ -4,7 +4,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const nodeExternals = require("webpack-node-externals");
 
 const config = {
-  entry: "./src/ish.go.view.h5.tsx",
+  entry: "./src/app.tsx",
   output: {
     path: path.join(__dirname, "/public"),
     filename: "bundle.min.js",

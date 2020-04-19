@@ -9,7 +9,7 @@ import {
 import { cloneDeep } from "lodash-es";
 
 export class GameState {
-  private board: PointState[][];
+  private readonly board: PointState[][];
   public gameHistory: MoveResult[] = [];
   public currentPlayer: Player;
   constructor(
@@ -32,10 +32,10 @@ export class GameState {
   getPointStateAt(point: Point): PointState {
     return this.board[point.column][point.row];
   }
-  setPointStateAt(point: Point, pointState: PointState): void {
+  _setPointStateAt(point: Point, pointState: PointState): void {
     this.board[point.column][point.row] = pointState;
   }
-  isUniqueBoard(): boolean {
+  _isUniqueBoard(): boolean {
     const first = this.gameHistory[this.gameHistory.length - 2];
     const second = this.gameHistory[this.gameHistory.length - 1];
     if (
@@ -72,10 +72,8 @@ export class GameState {
       added2.row === removed1.row
     );
   }
-  setBoardCopy(board: PointState[][]): void {
-    this.board = cloneDeep(board);
-  }
-  getNeighborsAt(point: Point): Point[] {
+
+  _getNeighborsAt(point: Point): Point[] {
     const steps = [
       [-1, 0],
       [0, -1],
@@ -90,23 +88,25 @@ export class GameState {
           Math.max(point.row, point.column) < this.getBoardSize()
       );
   }
-  getChainPoints(point: Point, chainPoints: Point[]): Point[] {
+
+  _getChainPoints(point: Point, chainPoints: Point[]): Point[] {
     const pState = this.getPointStateAt(point);
     chainPoints.push(point);
 
-    for (const nPoint of this.getNeighborsAt(point)) {
+    for (const nPoint of this._getNeighborsAt(point)) {
       const nState = this.getPointStateAt(nPoint);
       if (pState === nState && !nPoint.isInArray(chainPoints)) {
-        this.getChainPoints(nPoint, chainPoints);
+        this._getChainPoints(nPoint, chainPoints);
       }
     }
     return chainPoints;
   }
-  getLibertyPoints(point: Point): number {
-    const chain = this.getChainPoints(point, []);
+
+  _getLibertyPoints(point: Point): number {
+    const chain = this._getChainPoints(point, []);
     const libPoints = new Set();
     for (const chainPoint of chain) {
-      for (const nPoint of this.getNeighborsAt(chainPoint)) {
+      for (const nPoint of this._getNeighborsAt(chainPoint)) {
         const state = this.getPointStateAt(nPoint);
         if (state === PointState.EMPTY) {
           libPoints.add(nPoint);
@@ -115,18 +115,19 @@ export class GameState {
     }
     return libPoints.size;
   }
-  getCapturedPoints(point: Point): Point[] {
+
+  _getCapturedPoints(point: Point): Point[] {
     let capPoints: Point[] = [];
     const pState = this.getPointStateAt(point);
 
-    for (const nPoint of this.getNeighborsAt(point)) {
+    for (const nPoint of this._getNeighborsAt(point)) {
       const nState = this.getPointStateAt(nPoint);
       if (nState !== pState && nState !== PointState.EMPTY) {
         if (
           !nPoint.isInArray(capPoints) &&
-          this.getLibertyPoints(nPoint) === 0
+          this._getLibertyPoints(nPoint) === 0
         ) {
-          const chain = this.getChainPoints(nPoint, []);
+          const chain = this._getChainPoints(nPoint, []);
           capPoints = capPoints.concat(chain);
         }
       }
@@ -134,7 +135,7 @@ export class GameState {
     return capPoints;
   }
 
-  isValidMove(): MoveError | void {
+  _isValidMove(): MoveError | void {
     // Check if point is empty
     const actions = this.gameHistory[this.gameHistory.length - 1];
     if (
@@ -148,7 +149,7 @@ export class GameState {
     }
 
     // Check for repeating board state
-    if (!this.isUniqueBoard()) {
+    if (!this._isUniqueBoard()) {
       return MoveError.REPEAT;
     }
     if (
@@ -157,7 +158,7 @@ export class GameState {
           action.stateBefore === PointState.EMPTY &&
           action.stateNow !== PointState.EMPTY
         ) {
-          return this.getLibertyPoints(action.point) === 0;
+          return this._getLibertyPoints(action.point) === 0;
         }
         return false;
       })
@@ -165,38 +166,43 @@ export class GameState {
       return MoveError.SUICIDE;
     }
   }
-  move(point: Point): MoveResult | MoveError {
-    const player = this.currentPlayer;
+
+  move(point: Point): GameState | MoveError {
+    const selfCopy = cloneDeep<GameState>(this);
+
+    const player = selfCopy.currentPlayer;
     const actionPlace = new Action(
-      this.currentPlayer.pointState,
-      this.getPointStateAt(point),
+      selfCopy.currentPlayer.pointState,
+      selfCopy.getPointStateAt(point),
       point
     );
-    this.setPointStateAt(point, player.pointState);
+    selfCopy._setPointStateAt(point, player.pointState);
 
-    const capturedPoints = this.getCapturedPoints(point);
+    const capturedPoints = selfCopy._getCapturedPoints(point);
     const actionCapture = capturedPoints.map(
       (capturedPoint) =>
         new Action(
           PointState.EMPTY,
-          this.getPointStateAt(capturedPoint),
+          selfCopy.getPointStateAt(capturedPoint),
           capturedPoint
         )
     );
     capturedPoints.forEach((capture) =>
-      this.setPointStateAt(capture, PointState.EMPTY)
+      selfCopy._setPointStateAt(capture, PointState.EMPTY)
     );
 
-    this.currentPlayer = player === this.player1 ? this.player2 : this.player1;
+    selfCopy.currentPlayer =
+      player === selfCopy.player1 ? selfCopy.player2 : selfCopy.player1;
     const moveResult = new MoveResult(player, [...actionCapture, actionPlace]);
-    this.gameHistory.push(moveResult);
-    const moveError = this.isValidMove();
+    selfCopy.gameHistory.push(moveResult);
+    const moveError = selfCopy._isValidMove();
     if (moveError !== undefined) {
-      this.moveBackwards();
+      selfCopy.moveBackwards();
       return moveError;
     }
-    return moveResult;
+    return selfCopy;
   }
+
   moveBackwards(): MoveResult | null {
     const lastMove = this.gameHistory.pop();
     if (lastMove === undefined) {
@@ -206,7 +212,7 @@ export class GameState {
     return new MoveResult(
       lastMove.player,
       lastMove.actions.map((action) => {
-        this.setPointStateAt(action.point, action.stateBefore);
+        this._setPointStateAt(action.point, action.stateBefore);
         return new Action(action.stateBefore, action.stateNow, action.point);
       })
     );

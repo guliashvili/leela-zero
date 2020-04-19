@@ -1,8 +1,13 @@
 import * as React from "react";
+import { Board } from "./board/Board";
+import GoStateProvider from "../context/GoState";
 
 export class Main extends React.Component<{}, {}> {
   render() {
-    console.log("hi");
-    return <h1>hizii</h1>;
+    return (
+      <GoStateProvider>
+        <Board boardSize={522} />
+      </GoStateProvider>
+    );
   }
 }
