@@ -1,79 +1,67 @@
-import {
-  Action,
-  MoveError,
-  MoveResult,
-  Player,
-  Point,
-  PointState,
-} from "./ish.go";
-import { cloneDeep } from "lodash-es";
+import { MoveError, Player, Point, PointState } from "./ish.go";
+import { cloneDeep, isEqual } from "lodash";
+type BoardState = {
+  children: { readonly move: Point; state: BoardState }[];
+  nextHint: BoardState | null;
+  readonly back: BoardState | null;
+  readonly currentPlayer: Player;
+  readonly board: PointState[][];
+};
+export type BoardsState = {
+  readonly player1: Player;
+  readonly player2: Player;
+  readonly boardSize: number;
+  currentBoard: BoardState;
+};
 
-export class GameState {
-  private readonly board: PointState[][];
-  public gameHistory: MoveResult[] = [];
-  public currentPlayer: Player;
-  constructor(
-    public readonly boardSize: number,
-    public readonly player1: Player,
-    public readonly player2: Player
-  ) {
-    this.currentPlayer = player1;
-    this.board = [];
-    for (let i = 0; i < this.boardSize; i++) {
-      this.board[i] = new Array(this.boardSize);
-      for (let j = 0; j < this.boardSize; j++) {
-        this.board[i][j] = PointState.EMPTY;
+export namespace GameCore {
+  export function getInitialBoardsState(
+    boardSize: number,
+    player1: Player,
+    player2: Player
+  ): BoardsState {
+    const board: PointState[][] = [];
+    for (let i = 0; i < boardSize; i++) {
+      board[i] = new Array(boardSize);
+      for (let j = 0; j < boardSize; j++) {
+        board[i][j] = PointState.EMPTY;
       }
     }
-  }
-  getBoardSize(): number {
-    return this.board.length;
-  }
-  getPointStateAt(point: Point): PointState {
-    return this.board[point.column][point.row];
-  }
-  _setPointStateAt(point: Point, pointState: PointState): void {
-    this.board[point.column][point.row] = pointState;
-  }
-  _isUniqueBoard(): boolean {
-    const first = this.gameHistory[this.gameHistory.length - 2];
-    const second = this.gameHistory[this.gameHistory.length - 1];
-    if (
-      first === undefined ||
-      second === undefined ||
-      first.actions.length !== 2 ||
-      second.actions.length !== 2
-    ) {
-      return true;
-    }
-    const removed1 = first.actions.filter(
-      (action) => action.stateNow === PointState.EMPTY
-    )[0].point;
-    const added1 = first.actions.filter(
-      (action) => action.stateNow !== PointState.EMPTY
-    )[0].point;
-    if (removed1 === null || added1 === null) {
-      return true;
-    }
-    const removed2 = second.actions.filter(
-      (action) => action.stateNow === PointState.EMPTY
-    )[0].point;
-    const added2 = second.actions.filter(
-      (action) => action.stateNow !== PointState.EMPTY
-    )[0].point;
-    if (removed2 === null || added2 === null) {
-      return true;
-    }
 
-    return !(
-      removed2.column === added1.column &&
-      removed2.row === added1.row &&
-      added2.column === removed1.column &&
-      added2.row === removed1.row
-    );
+    return {
+      player1,
+      player2,
+      boardSize,
+      currentBoard: {
+        children: [],
+        nextHint: null,
+        back: null,
+        currentPlayer: player2,
+        board,
+      },
+    };
+  }
+  export function getBoardSize(boardsState: BoardsState): number {
+    return boardsState.boardSize;
+  }
+  export function getPointStateAt(
+    board: PointState[][],
+    point: Point
+  ): PointState {
+    return board[point.column][point.row];
+  }
+  function _setPointStateAt(
+    board: PointState[][],
+    point: Point,
+    pointState: PointState
+  ): void {
+    board[point.column][point.row] = pointState;
+  }
+  function _isUniqueBoard(boardState: BoardState): boolean {
+    return isEqual(boardState.board, boardState.back?.back?.board);
   }
 
-  _getNeighborsAt(point: Point): Point[] {
+  function _getNeighborsAt(boardSize: number, point: Point): Point[] {
     const steps = [
       [-1, 0],
       [0, -1],
@@ -85,29 +73,33 @@ export class GameState {
       .filter(
         (point) =>
           Math.min(point.row, point.column) >= 0 &&
-          Math.max(point.row, point.column) < this.getBoardSize()
+          Math.max(point.row, point.column) < boardSize
       );
   }
 
-  _getChainPoints(point: Point, chainPoints: Point[]): Point[] {
-    const pState = this.getPointStateAt(point);
+  function _getChainPoints(
+    board: PointState[][],
+    point: Point,
+    chainPoints: Point[]
+  ): Point[] {
+    const pState = getPointStateAt(board, point);
     chainPoints.push(point);
 
-    for (const nPoint of this._getNeighborsAt(point)) {
-      const nState = this.getPointStateAt(nPoint);
+    for (const nPoint of _getNeighborsAt(board.length, point)) {
+      const nState = getPointStateAt(board, nPoint);
       if (pState === nState && !nPoint.isInArray(chainPoints)) {
-        this._getChainPoints(nPoint, chainPoints);
+        _getChainPoints(board, nPoint, chainPoints);
       }
     }
     return chainPoints;
   }
 
-  _getLibertyPoints(point: Point): number {
-    const chain = this._getChainPoints(point, []);
+  function _getLibertyPoints(board: PointState[][], point: Point): number {
+    const chain = _getChainPoints(board, point, []);
     const libPoints = new Set();
     for (const chainPoint of chain) {
-      for (const nPoint of this._getNeighborsAt(chainPoint)) {
-        const state = this.getPointStateAt(nPoint);
+      for (const nPoint of _getNeighborsAt(board.length, chainPoint)) {
+        const state = getPointStateAt(board, nPoint);
         if (state === PointState.EMPTY) {
           libPoints.add(nPoint);
         }
@@ -116,18 +108,18 @@ export class GameState {
     return libPoints.size;
   }
 
-  _getCapturedPoints(point: Point): Point[] {
+  function _getCapturedPoints(board: PointState[][], point: Point): Point[] {
     let capPoints: Point[] = [];
-    const pState = this.getPointStateAt(point);
+    const pState = getPointStateAt(board, point);
 
-    for (const nPoint of this._getNeighborsAt(point)) {
-      const nState = this.getPointStateAt(nPoint);
+    for (const nPoint of _getNeighborsAt(board.length, point)) {
+      const nState = getPointStateAt(board, nPoint);
       if (nState !== pState && nState !== PointState.EMPTY) {
         if (
           !nPoint.isInArray(capPoints) &&
-          this._getLibertyPoints(nPoint) === 0
+          _getLibertyPoints(board, nPoint) === 0
         ) {
-          const chain = this._getChainPoints(nPoint, []);
+          const chain = _getChainPoints(board, nPoint, []);
           capPoints = capPoints.concat(chain);
         }
       }
@@ -135,86 +127,80 @@ export class GameState {
     return capPoints;
   }
 
-  _isValidMove(): MoveError | void {
-    // Check if point is empty
-    const actions = this.gameHistory[this.gameHistory.length - 1];
-    if (
-      actions.actions.some(
-        (action) =>
-          action.stateBefore !== PointState.EMPTY &&
-          action.stateNow !== PointState.EMPTY
-      )
-    ) {
-      return MoveError.OCCUPIED;
-    }
-
+  // TODO check
+  function _isValidMove(
+    boardState: BoardState,
+    point: Point
+  ): MoveError | void {
     // Check for repeating board state
-    if (!this._isUniqueBoard()) {
+    if (!_isUniqueBoard(boardState)) {
       return MoveError.REPEAT;
     }
-    if (
-      actions.actions.some((action) => {
-        if (
-          action.stateBefore === PointState.EMPTY &&
-          action.stateNow !== PointState.EMPTY
-        ) {
-          return this._getLibertyPoints(action.point) === 0;
-        }
-        return false;
-      })
-    ) {
+    if (_getLibertyPoints(boardState.board, point) === 0) {
       return MoveError.SUICIDE;
     }
   }
 
-  move(point: Point): GameState | MoveError {
-    const selfCopy = cloneDeep<GameState>(this);
-
-    const player = selfCopy.currentPlayer;
-    const actionPlace = new Action(
-      selfCopy.currentPlayer.pointState,
-      selfCopy.getPointStateAt(point),
-      point
+  function move(boardsState: BoardsState, point: Point): MoveError | void {
+    const child = boardsState.currentBoard.children.find((child) =>
+      isEqual(child.move, point)
     );
-    selfCopy._setPointStateAt(point, player.pointState);
-
-    const capturedPoints = selfCopy._getCapturedPoints(point);
-    const actionCapture = capturedPoints.map(
-      (capturedPoint) =>
-        new Action(
-          PointState.EMPTY,
-          selfCopy.getPointStateAt(capturedPoint),
-          capturedPoint
-        )
-    );
-    capturedPoints.forEach((capture) =>
-      selfCopy._setPointStateAt(capture, PointState.EMPTY)
-    );
-
-    selfCopy.currentPlayer =
-      player === selfCopy.player1 ? selfCopy.player2 : selfCopy.player1;
-    const moveResult = new MoveResult(player, [...actionCapture, actionPlace]);
-    selfCopy.gameHistory.push(moveResult);
-    const moveError = selfCopy._isValidMove();
-    if (moveError !== undefined) {
-      selfCopy.moveBackwards();
-      return moveError;
+    if (child !== undefined) {
+      boardsState.currentBoard = child.state;
     }
-    return selfCopy;
+
+    if (
+      getPointStateAt(boardsState.currentBoard.board, point) !==
+      PointState.EMPTY
+    ) {
+      return MoveError.SUICIDE;
+    }
+
+    const player = boardsState.currentBoard.currentPlayer;
+    const newBoard = cloneDeep(boardsState.currentBoard.board);
+
+    _setPointStateAt(newBoard, point, player.pointState);
+    const capturedPoints = _getCapturedPoints(newBoard, point);
+    capturedPoints.forEach((capture) =>
+      _setPointStateAt(newBoard, capture, PointState.EMPTY)
+    );
+
+    const newCurrentBoardState: BoardState = {
+      children: [],
+      nextHint: null,
+      back: boardsState.currentBoard,
+      currentPlayer:
+        player === boardsState.player1
+          ? boardsState.player2
+          : boardsState.player1,
+      board: newBoard,
+    };
+    const error = _isValidMove(newCurrentBoardState, point);
+    if (error !== undefined) {
+      return error;
+    }
+    if (
+      boardsState.currentBoard.children.push({
+        move: point,
+        state: newCurrentBoardState,
+      }) === 1
+    ) {
+      boardsState.currentBoard.nextHint = newCurrentBoardState;
+    }
+    boardsState.currentBoard = newCurrentBoardState;
   }
 
-  moveBackwards(): MoveResult | null {
-    const lastMove = this.gameHistory.pop();
-    if (lastMove === undefined) {
-      return null;
+  function moveBackwards(boardsState: BoardsState): void {
+    const backBoardState = boardsState.currentBoard.back;
+    if (backBoardState !== null) {
+      backBoardState.nextHint = boardsState.currentBoard;
+      boardsState.currentBoard = backBoardState;
     }
-    this.currentPlayer = lastMove.player;
-    return new MoveResult(
-      lastMove.player,
-      lastMove.actions.map((action) => {
-        this._setPointStateAt(action.point, action.stateBefore);
-        return new Action(action.stateBefore, action.stateNow, action.point);
-      })
-    );
+  }
+  function moveForward(boardsState: BoardsState): void {
+    const nextBoardState = boardsState.currentBoard.nextHint;
+    if (nextBoardState !== null) {
+      boardsState.currentBoard = nextBoardState;
+    }
   }
 }

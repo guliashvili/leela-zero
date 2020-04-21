@@ -1,15 +1,15 @@
 import React, { createContext, ReactNode, useReducer } from "react";
 import { reducer, Action } from "./reducer";
-import { GameState } from "./ish.go.logic";
+import { GameCore, BoardsState } from "./ish.go.logic";
 import { Color, Player, PointState } from "./ish.go";
 
-const initialState = new GameState(
+const initialState = GameCore.getInitialBoardsState(
   19,
   new Player(Color.BLACK, PointState.BLACK),
   new Player(Color.WHITE, PointState.WHITE)
 );
 type GoStateContextProps = {
-  gameState: GameState;
+  gameState: BoardsState;
   dispatch(action: Action): void;
 };
 export const GoStateContext = createContext<GoStateContextProps>({

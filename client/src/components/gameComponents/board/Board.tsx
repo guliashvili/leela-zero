@@ -3,16 +3,11 @@ import Konva from "konva";
 import { Stage, Layer, Star, Text, Image } from "react-konva";
 
 import useImage from "use-image";
-import { Point as PointComponent } from "../Point";
-import { GoStateContext } from "../../context/GoState";
-import imgBoard from "../../imgs/board.png";
-import {
-  Action,
-  Color,
-  MoveResult,
-  Point,
-  PointState,
-} from "../../context/ish.go";
+import { Point as PointComponent } from "../../Point";
+import { GoStateContext } from "../../../context/GoState";
+import imgBoard from "../../../imgs/board.png";
+import { Point } from "../../../context/ish.go";
+import { GameCore } from "../../../context/ish.go.logic";
 
 type Props = Readonly<{ boardSize: number }>;
 const PIECE_SIZE = 27;
@@ -20,12 +15,7 @@ const BOARD_PADDING = 6;
 
 export const Board = (props: Props): JSX.Element => {
   const [background] = useImage(imgBoard);
-  const goState = useContext(GoStateContext);
-  if (goState === undefined) {
-    return <div />;
-  }
-
-  const { dispatch, gameState } = goState;
+  const { dispatch, gameState } = useContext(GoStateContext);
   function onClick(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
     dispatch({ type: "playMove", move: point });
     console.log(point, evt);
@@ -47,7 +37,10 @@ export const Board = (props: Props): JSX.Element => {
               point={point}
               x={point.row * PIECE_SIZE + BOARD_PADDING}
               y={point.column * PIECE_SIZE + BOARD_PADDING}
-              pointState={gameState.getPointStateAt(point)}
+              pointState={GameCore.getPointStateAt(
+                gameState.currentBoard.board,
+                point
+              )}
               onClick={onClick}
             />
           );
