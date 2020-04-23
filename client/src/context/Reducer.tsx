@@ -1,27 +1,20 @@
-import { BoardsState } from "./ish.go.logic";
+import { BoardsState, GameCore } from "./ish.go.logic";
 import { Point } from "./ish.go";
+import produce, { setAutoFreeze, Draft } from "immer";
 export type Action = Readonly<
   { type: "back" } | { type: "playMove"; move: Point } | { type: "forward" }
 >;
-
-export const reducer = (state: BoardsState, action: Action) => {
-  console.log("im reducing");
-  // switch (action.type) {
-  //   case "playMove":
-  //     const newMoveState = state.move(action.move);
-  //     if (!(newMoveState instanceof GameState)) {
-  //       return state;
-  //     }
-  //     return newMoveState;
-  //   case "back":
-  //     // const newBackState = state.moveBackwards();
-  //     // if (newBackState === null) {
-  //     //   return state;
-  //     // }
-  //     // return newBackState;
-  //
-  //   case "forward":
-  //   default:
-  return state;
-  // }
-};
+setAutoFreeze(false);
+export const reducer = produce((draft: Draft<BoardsState>, action: Action) => {
+  switch (action.type) {
+    case "playMove":
+      GameCore.move(draft, action.move);
+      break;
+    case "back":
+      GameCore.moveBackwards(draft);
+      break;
+    case "forward":
+      GameCore.moveForward(draft);
+      break;
+  }
+});

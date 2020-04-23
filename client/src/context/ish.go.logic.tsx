@@ -1,16 +1,16 @@
 import { MoveError, Player, Point, PointState } from "./ish.go";
 import { cloneDeep, isEqual } from "lodash";
 type BoardState = {
-  children: { readonly move: Point; state: BoardState }[];
+  children: { move: Point; state: BoardState }[];
   nextHint: BoardState | null;
-  readonly back: BoardState | null;
-  readonly currentPlayer: Player;
-  readonly board: PointState[][];
+  back: BoardState | null;
+  currentPlayer: Player;
+  board: PointState[][];
 };
 export type BoardsState = {
-  readonly player1: Player;
-  readonly player2: Player;
-  readonly boardSize: number;
+  player1: Player;
+  player2: Player;
+  boardSize: number;
   currentBoard: BoardState;
 };
 
@@ -41,9 +41,6 @@ export namespace GameCore {
       },
     };
   }
-  export function getBoardSize(boardsState: BoardsState): number {
-    return boardsState.boardSize;
-  }
   export function getPointStateAt(
     board: PointState[][],
     point: Point
@@ -58,7 +55,15 @@ export namespace GameCore {
     board[point.column][point.row] = pointState;
   }
   function _isUniqueBoard(boardState: BoardState): boolean {
-    return isEqual(boardState.board, boardState.back?.back?.board);
+    const backState = boardState.back;
+    if (backState === null) {
+      return true;
+    }
+    const backBackState = backState.back;
+    if (backBackState === null) {
+      return true;
+    }
+    return isEqual(boardState.board, backBackState.board);
   }
 
   function _getNeighborsAt(boardSize: number, point: Point): Point[] {
@@ -127,7 +132,6 @@ export namespace GameCore {
     return capPoints;
   }
 
-  // TODO check
   function _isValidMove(
     boardState: BoardState,
     point: Point
@@ -141,12 +145,16 @@ export namespace GameCore {
     }
   }
 
-  function move(boardsState: BoardsState, point: Point): MoveError | void {
+  export function move(
+    boardsState: BoardsState,
+    point: Point
+  ): MoveError | void {
     const child = boardsState.currentBoard.children.find((child) =>
       isEqual(child.move, point)
     );
     if (child !== undefined) {
       boardsState.currentBoard = child.state;
+      return;
     }
 
     if (
@@ -175,10 +183,12 @@ export namespace GameCore {
           : boardsState.player1,
       board: newBoard,
     };
+
     const error = _isValidMove(newCurrentBoardState, point);
     if (error !== undefined) {
       return error;
     }
+
     if (
       boardsState.currentBoard.children.push({
         move: point,
@@ -187,17 +197,16 @@ export namespace GameCore {
     ) {
       boardsState.currentBoard.nextHint = newCurrentBoardState;
     }
-    boardsState.currentBoard = newCurrentBoardState;
   }
 
-  function moveBackwards(boardsState: BoardsState): void {
+  export function moveBackwards(boardsState: BoardsState): void {
     const backBoardState = boardsState.currentBoard.back;
     if (backBoardState !== null) {
       backBoardState.nextHint = boardsState.currentBoard;
       boardsState.currentBoard = backBoardState;
     }
   }
-  function moveForward(boardsState: BoardsState): void {
+  export function moveForward(boardsState: BoardsState): void {
     const nextBoardState = boardsState.currentBoard.nextHint;
     if (nextBoardState !== null) {
       boardsState.currentBoard = nextBoardState;

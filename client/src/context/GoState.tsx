@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useReducer } from "react";
+import React, { createContext, useReducer } from "react";
 import { reducer, Action } from "./reducer";
 import { GameCore, BoardsState } from "./ish.go.logic";
 import { Color, Player, PointState } from "./ish.go";
@@ -25,6 +25,7 @@ const GoStateProvider: React.FC<{}> = ({ children }: GoStateProviderProps) => {
   const [gameState, dispatch] = useReducer(reducer, initialState);
 
   return (
+    // @ts-ignore
     <GoStateContext.Provider value={{ gameState, dispatch }}>
       {children}
     </GoStateContext.Provider>
