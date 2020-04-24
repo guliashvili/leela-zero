@@ -1,17 +1,19 @@
 import { MoveError, Player, Point, PointState } from "./ish.go";
 import { cloneDeep, isEqual } from "lodash";
 type BoardState = {
-  children: { move: Point; state: BoardState }[];
-  nextHint: BoardState | null;
-  back: BoardState | null;
+  children: { move: Point; state: number }[];
+  nextHint: number | null;
+  back: number | null;
   currentPlayer: Player;
   board: PointState[][];
+  index: number;
 };
 export type BoardsState = {
   player1: Player;
   player2: Player;
   boardSize: number;
-  currentBoard: BoardState;
+  currentBoard: number;
+  boards: BoardState[];
 };
 
 export namespace GameCore {
@@ -32,13 +34,17 @@ export namespace GameCore {
       player1,
       player2,
       boardSize,
-      currentBoard: {
-        children: [],
-        nextHint: null,
-        back: null,
-        currentPlayer: player2,
-        board,
-      },
+      currentBoard: 0,
+      boards: [
+        {
+          children: [],
+          nextHint: null,
+          back: null,
+          currentPlayer: player2,
+          board,
+          index: 0,
+        },
+      ],
     };
   }
   export function getPointStateAt(
@@ -54,16 +60,15 @@ export namespace GameCore {
   ): void {
     board[point.column][point.row] = pointState;
   }
-  function _isUniqueBoard(boardState: BoardState): boolean {
-    const backState = boardState.back;
-    if (backState === null) {
+  function _isUniqueBoard(
+    boardState: BoardState,
+    backBoardState: BoardState | null
+  ): boolean {
+    if (backBoardState === null) {
+      console.log("ofc");
       return true;
     }
-    const backBackState = backState.back;
-    if (backBackState === null) {
-      return true;
-    }
-    return isEqual(boardState.board, backBackState.board);
+    return !isEqual(boardState.board, backBoardState.board);
   }
 
   function _getNeighborsAt(boardSize: number, point: Point): Point[] {
@@ -134,10 +139,11 @@ export namespace GameCore {
 
   function _isValidMove(
     boardState: BoardState,
+    backBoardState: BoardState | null,
     point: Point
   ): MoveError | void {
     // Check for repeating board state
-    if (!_isUniqueBoard(boardState)) {
+    if (!_isUniqueBoard(boardState, backBoardState)) {
       return MoveError.REPEAT;
     }
     if (_getLibertyPoints(boardState.board, point) === 0) {
@@ -149,23 +155,26 @@ export namespace GameCore {
     boardsState: BoardsState,
     point: Point
   ): MoveError | void {
-    const child = boardsState.currentBoard.children.find((child) =>
+    const currentBoard = boardsState.boards[boardsState.currentBoard];
+    const child = currentBoard.children.find((child) =>
       isEqual(child.move, point)
     );
     if (child !== undefined) {
       boardsState.currentBoard = child.state;
+      console.log("uh");
       return;
     }
 
-    if (
-      getPointStateAt(boardsState.currentBoard.board, point) !==
-      PointState.EMPTY
-    ) {
+    if (getPointStateAt(currentBoard.board, point) !== PointState.EMPTY) {
+      console.log("ah");
       return MoveError.SUICIDE;
     }
 
-    const player = boardsState.currentBoard.currentPlayer;
-    const newBoard = cloneDeep(boardsState.currentBoard.board);
+    const player =
+      currentBoard.currentPlayer === boardsState.player1
+        ? boardsState.player2
+        : boardsState.player1;
+    const newBoard = cloneDeep(currentBoard.board);
 
     _setPointStateAt(newBoard, point, player.pointState);
     const capturedPoints = _getCapturedPoints(newBoard, point);
@@ -177,39 +186,44 @@ export namespace GameCore {
       children: [],
       nextHint: null,
       back: boardsState.currentBoard,
-      currentPlayer:
-        player === boardsState.player1
-          ? boardsState.player2
-          : boardsState.player1,
+      currentPlayer: player,
       board: newBoard,
+      index: boardsState.boards.length,
     };
 
-    const error = _isValidMove(newCurrentBoardState, point);
+    const error = _isValidMove(
+      newCurrentBoardState,
+      currentBoard.back === null ? null : boardsState.boards[currentBoard.back],
+      point
+    );
     if (error !== undefined) {
+      console.log("well,", error);
       return error;
     }
 
     if (
-      boardsState.currentBoard.children.push({
+      currentBoard.children.push({
         move: point,
-        state: newCurrentBoardState,
+        state: boardsState.currentBoard =
+          boardsState.boards.push(newCurrentBoardState) - 1,
       }) === 1
     ) {
-      boardsState.currentBoard.nextHint = newCurrentBoardState;
+      currentBoard.nextHint = currentBoard.nextHint ?? boardsState.currentBoard;
     }
+    console.log("im here");
   }
 
   export function moveBackwards(boardsState: BoardsState): void {
-    const backBoardState = boardsState.currentBoard.back;
+    const currentBoard = boardsState.boards[boardsState.currentBoard];
+    const backBoardState = currentBoard.back;
     if (backBoardState !== null) {
-      backBoardState.nextHint = boardsState.currentBoard;
+      boardsState.boards[backBoardState].nextHint = currentBoard.index;
       boardsState.currentBoard = backBoardState;
     }
   }
   export function moveForward(boardsState: BoardsState): void {
-    const nextBoardState = boardsState.currentBoard.nextHint;
-    if (nextBoardState !== null) {
-      boardsState.currentBoard = nextBoardState;
-    }
+    const currentBoard = boardsState.boards[boardsState.currentBoard];
+    boardsState.currentBoard =
+      currentBoard.nextHint ?? boardsState.currentBoard;
   }
 }

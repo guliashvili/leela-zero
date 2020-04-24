@@ -38,7 +38,7 @@ export const Board = (props: Props): JSX.Element => {
               x={point.row * PIECE_SIZE + BOARD_PADDING}
               y={point.column * PIECE_SIZE + BOARD_PADDING}
               pointState={GameCore.getPointStateAt(
-                gameState.currentBoard.board,
+                gameState.boards[gameState.currentBoard].board,
                 point
               )}
               onClick={onClick}
