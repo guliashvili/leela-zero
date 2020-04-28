@@ -1,8 +1,12 @@
-
-#include "../Simple-Web-Server/server_http.hpp"
+#include "Poco/Net/HTTPServer.h"
+#include "Poco/Net/HTTPRequestHandler.h"
+#include "Poco/Net/HTTPRequestHandlerFactory.h"
+#include "Poco/Net/HTTPServerRequest.h"
+#include "Poco/Net/HTTPServerResponse.h"
+#include "Poco/Util/ServerApplication.h"
+#include "Poco/JSON/Parser.h"
 #include <future>
 
-// Added for the json-example
 #define BOOST_SPIRIT_THREADSAFE
 
 #include <boost/property_tree/json_parser.hpp>
@@ -13,10 +17,6 @@
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <vector>
-
-#ifdef HAVE_OPENSSL
-#include "crypto.hpp"
-#endif
 
 using namespace std;
 // Added for the json-example:
@@ -36,56 +36,117 @@ using json = nlohmann::json;
 #include "GTP.h"
 
 using namespace Utils;
+using namespace Poco;
+using namespace Poco::Net;
+using namespace Poco::Util;
+using namespace Poco::JSON;
 
-using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
+class HelloRequestHandler: public HTTPRequestHandler
+{
+private:
+    const  std::vector<std::string> argv;
+public:
+    HelloRequestHandler(std::vector<std::string> argv): argv{argv}{
+    }
+    void handleRequest(HTTPServerRequest& request, HTTPServerResponse& response)
+    {
+      Application& app = Application::instance();
+      app.logger().information("Request from %s", request.clientAddress().toString());
 
-int main(int argc, char *argv[]) {
-  HttpServer server;
-  server.config.port = 1999;
-  server.resource["^/json$"]["POST"] = [argc, argv](shared_ptr<HttpServer::Response> response,
-                                                    shared_ptr<HttpServer::Request> request) {
+      response.setChunkedTransferEncoding(true);
+      response.setContentType("text/html");
+      Parser parser;
+      auto parserRequest = parser.parse(request.stream());
+      Object::Ptr objectRequest = parserRequest.extract<Object::Ptr>();
 
-      static auto game = init(argc, argv);
-      std::cerr << "starteed "<<request->content.string() << std::endl;
-      Training::clear_training();
-      game->reset_game();
+      std::vector<char*> cargv;
+      cargv.reserve(argv.size());
 
-      try {
-        auto j3 = json::parse(request->content);
-        bool isBlack = false;
-        for (const auto &move : j3.at("moves")) {
-          const auto x = move.at("x").get<int>();
-          const auto y = move.at("y").get<int>();
-          isBlack = move.at("isBlack").get<bool>();
-
-          const auto vertex = game->board.get_vertex(x, y);
-          game->play_move((int) !isBlack, vertex);
-        }
-        const auto commandSpec = j3.at("commandSpec");
-        const auto command = commandSpec.at("command").get<string>();
-        if(true) // command ===
-        {
-          GTP::execute(*game, "genmove " +  (game->board.black_to_move() ? string("b") : string("w")));
-        }
-        const auto [x,y]  = game->board.get_xy(game->get_last_move());
-        const auto answer = json({{"move", {{"x", x}, {"y", y}, {"isBlack", !isBlack}}}}).dump();
-        *response << "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " << answer.length() << "\r\n\r\n"
-                  << answer;
+      for(const auto &s : argv) {
+        cargv.push_back((char *) (s.c_str()));
       }
-      catch (const exception &e) {
-        std::cerr<<e.what()<<std::endl;
-        response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
+       char **a = &(cargv[0]);
+      char* z[6] = {"self", "-w", "/Users/gguli/Desktop/98ae471207c26af3946880caf9daaaa2d3db77b1e212660f8ab6a2b2e11a21dd", "-p", "1000", "--noponder"};
+      static auto game = init(6, z);
+
+    Training::clear_training();
+    game->reset_game();
+
+    try {
+      bool isBlack = false;
+      auto array =  objectRequest->getArray("moves");
+      for (int i = 0; i < array->size(); i++) {
+        auto move = array->getObject(i);
+        const auto x = move->getValue<int>("x");
+        const auto y = move->getValue<int>("y");
+        isBlack = move->getValue<bool>("isBlack");
+
+        const auto vertex = game->board.get_vertex(x, y);
+        game->play_move((int) !isBlack, vertex);
       }
-  };
-  promise<unsigned short> server_port;
-  thread server_thread([&server, &server_port]() {
-      // Start server
-      server.start([&server_port](unsigned short port) {
-          server_port.set_value(port);
-      });
-  });
-  server_thread.join();
 
-  return 0;
+      const auto commandSpec = objectRequest->getObject("commandSpec");
+      const auto command = commandSpec->getValue<string>("command");
+      if (true) // command ===
+      {
+        GTP::execute(*game, "lz-genmove_analyze " + (game->board.black_to_move() ? string("b") : string("w")));
+      }
+      const auto[x, y]  = game->board.get_xy(game->get_last_move());
+      const auto answer = json({{"move", {{"x", x}, {"y", y}, {"isBlack", !isBlack}}}}).dump();
+      response.send() << "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " << answer.length()
+                << "\r\n\r\n"
+                << answer;
+    }
+    catch (const exception &e) {
+      std::cerr << e.what() << std::endl;
+      response.send() <<  e.what();
+    }
+  }
+};
 
-}
+
+
+
+class HelloRequestHandlerFactory: public HTTPRequestHandlerFactory
+{
+private:
+    const const std::vector<std::string> argv;
+public:
+    HelloRequestHandlerFactory(std::vector<std::string> argv): argv{argv}{
+    }
+    HTTPRequestHandler* createRequestHandler(const HTTPServerRequest&)
+    {
+      return new HelloRequestHandler(argv);
+    }
+};
+
+class WebServerApp: public ServerApplication
+{
+    void initialize(Application& self)
+    {
+      loadConfiguration();
+      ServerApplication::initialize(self);
+    }
+     void defineOptions(
+            OptionSet & options
+    ){
+       Poco::Util::Application::defineOptions(options);
+      options.addOption(Poco::Util::Option("w", "w", "model").required(true).repeatable(false));
+       options.addOption(Poco::Util::Option("p", "p", "depth").required(true).repeatable(false));
+       options.addOption(Poco::Util::Option("noponder", "", "nopon").required(true).repeatable(false));
+    }
+
+    int main(const std::vector<std::string>& argv)
+    {
+      UInt16 port = static_cast<UInt16>(config().getUInt("port", 1999));
+
+      HTTPServer srv(new HelloRequestHandlerFactory(argv), port);
+      srv.start();
+      waitForTerminationRequest();
+      srv.stop();
+
+      return Application::EXIT_OK;
+    }
+};
+
+POCO_SERVER_MAIN(WebServerApp)

@@ -99,7 +99,7 @@ static void calculate_thread_count_cpu(boost::program_options::variables_map & v
 }
 
 
-static void parse_commandline(int argc, char *argv[]) {
+static void parse_commandline(int argc, const char * const argv[]) {
   namespace po = boost::program_options;
   // Declare the supported options.
   po::options_description gen_desc("Generic options");
@@ -489,7 +489,7 @@ void benchmark(GameState& game) {
   search->think(FastBoard::WHITE);
 }
 
-std::unique_ptr<GameState> init(int argc, char *argv[]){
+std::unique_ptr<GameState> init(int argc,  const char * const argv[]){
   // Set up engine parameters
   GTP::setup_default_parameters();
   parse_commandline(argc, argv);

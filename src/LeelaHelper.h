@@ -7,6 +7,6 @@
 
 #include <memory>
 #include "GameState.h"
-std::unique_ptr<GameState> init(int argc, char *argv[]);
+std::unique_ptr<GameState> init(int argc, const char * const argv[]);
 
 #endif //LEELAZ_LEELA_H
