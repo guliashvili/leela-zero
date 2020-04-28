@@ -1,7 +1,24 @@
 import React, { createContext, useReducer } from "react";
-import { reducer, Action } from "./reducer";
 import { GameCore, BoardsState } from "./ish.go.logic";
 import { Color, Player, PointState } from "./ish.go";
+import { Point } from "./ish.go";
+import produce, { Draft } from "immer";
+export type Action = Readonly<
+  { type: "back" } | { type: "playMove"; move: Point } | { type: "forward" }
+>;
+const reducer = produce((draft: Draft<BoardsState>, action: Action) => {
+  switch (action.type) {
+    case "playMove":
+      GameCore.move(draft, action.move);
+      break;
+    case "back":
+      GameCore.moveBackwards(draft);
+      break;
+    case "forward":
+      GameCore.moveForward(draft);
+      break;
+  }
+});
 
 const initialState = GameCore.getInitialBoardsState(
   19,

@@ -5,8 +5,10 @@ const port = process.env.PORT || 80;
 
 const app = express();
 app.use(express.static(path.join(__dirname, "public")));
-
 app.use(express.json());
+const server = require("http").createServer(app);
+const io = require("socket.io")(server);
+
 app.post("/suggested_move", async function (req, res) {
   const gameHistory = req.body;
   console.log("givi history", gameHistory);
@@ -21,10 +23,9 @@ app.post("/suggested_move", async function (req, res) {
 
 app.post("/live_data", async function (req, res) {
   const body = req.body;
-  console.log("givi live data body", body);
+  io.broadcast.emit(body);
+  // console.log("givi live data body", body);
 });
-
-const server = require("http").createServer(app);
 
 server.listen(port, () => {
   console.log(`Server listening at port ${port}`);
