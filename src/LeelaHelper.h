@@ -6,7 +6,8 @@
 #define LEELAZ_LEELA_H
 
 #include <memory>
+#include <string>
 #include "GameState.h"
 std::unique_ptr<GameState> init(int argc, const char * const argv[]);
-
+void leelaProcessNews(std::string line);
 #endif //LEELAZ_LEELA_H

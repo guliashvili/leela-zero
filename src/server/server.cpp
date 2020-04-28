@@ -7,11 +7,6 @@
 #include "Poco/JSON/Parser.h"
 #include <future>
 
-#define BOOST_SPIRIT_THREADSAFE
-
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-
 // Added for the default_resource example
 #include <algorithm>
 #include <boost/filesystem.hpp>
@@ -19,12 +14,8 @@
 #include <vector>
 
 using namespace std;
-// Added for the json-example:
-using namespace boost::property_tree;
 #include   "Training.h"
 #include <nlohmann/json.hpp>
-
-// for convenience
 using json = nlohmann::json;
 
 #include "config.h"

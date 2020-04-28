@@ -18,7 +18,7 @@
     Additional permission under GNU GPL version 3 section 7
 
     If you modify this Program, or any covered work, by linking or
-    combining it with NVIDIA Corporation's libraries from the
+    combining it with NVIDIA Corporation"s libraries from the
     NVIDIA CUDA Toolkit and/or the NVIDIA CUDA Deep Neural
     Network library and/or the NVIDIA TensorRT inference library
     (or a modified version of those libraries), containing parts covered
@@ -47,6 +47,9 @@
 #endif
 
 #include "GTP.h"
+#include <iostream>
+#include "LeelaHelper.h"
+using namespace std;
 
 Utils::ThreadPool thread_pool;
 
@@ -121,12 +124,25 @@ static std::mutex IOmutex;
 static void myprintf_base(const char *fmt, va_list ap) {
     va_list ap2;
     va_copy(ap2, ap);
+    char buffer[1000];
+    auto out_len = vsnprintf(buffer, sizeof(buffer), fmt, ap2);
+  va_end(ap2);
+    if(out_len + 1 > sizeof(buffer)){
+      cerr<<"Buffer was fucked";
+      exit(-1);
+    }
+    string s(buffer);
+    leelaProcessNews(s);
 
-    vfprintf(stderr, fmt, ap);
+  va_copy(ap2, ap);
+    vfprintf(stderr, fmt, ap2);
+  va_end(ap2);
 
     if (cfg_logfile_handle) {
+      va_copy(ap2, ap);
         std::lock_guard<std::mutex> lock(IOmutex);
-        vfprintf(cfg_logfile_handle, fmt, ap2);
+        vfprintf(cfg_logfile_handle, fmt, ap2);;
+      va_end(ap2);
     }
     va_end(ap2);
 }
@@ -153,7 +169,6 @@ static void gtp_fprintf(FILE* file, const std::string& prefix,
                         const char *fmt, va_list ap) {
     fprintf(file, "%s ", prefix.c_str());
     vfprintf(file, fmt, ap);
-    fprintf(file, "\n\n");
 }
 
 static void gtp_base_printf(int id, std::string prefix,

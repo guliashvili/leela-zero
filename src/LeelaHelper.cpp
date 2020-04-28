@@ -11,6 +11,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <string>
 
 #include "GTP.h"
 #include "GameState.h"
@@ -19,6 +21,7 @@
 #include "Utils.h"
 #include "Zobrist.h"
 using namespace Utils;
+using namespace std;
 
 static void license_blurb() {
   printf(
@@ -522,4 +525,50 @@ std::unique_ptr<GameState> init(int argc,  const char * const argv[]){
     return 0;
   }
   return maingame;
+}
+
+
+#include <Poco/Net/HTTPClientSession.h>
+#include <Poco/Net/HTTPRequest.h>
+#include <Poco/Net/HTTPResponse.h>
+//#include <Poco/StreamCopier.h>
+#include <Poco/Path.h>
+#include <Poco/URI.h>
+#include <Poco/Exception.h>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+using namespace Poco::Net;
+using namespace Poco;
+
+void ofPostRequest(string url, string body) {
+  try
+  {
+    // prepare session
+    URI uri(url);
+    HTTPClientSession session(uri.getHost(), uri.getPort());
+
+    // prepare path
+    string path(uri.getPathAndQuery());
+    if (path.empty()) path = "/";
+
+    // send request
+    HTTPRequest req(HTTPRequest::HTTP_POST, path, HTTPMessage::HTTP_1_1);
+    req.setContentType("application/json");
+
+    // Set the request body
+    req.setContentLength( body.length() );
+
+    // sends request, returns open stream
+    std::ostream& os = session.sendRequest(req);
+    os << body;  // sends the body
+    session.flushRequest();
+  }
+  catch (Exception &ex)
+  {
+    cerr << ex.displayText() << endl;
+  }
+}
+void leelaProcessNews(std::string line) {
+  ofPostRequest("http://127.0.0.1/live_data", json({{"line",  line}}).dump());
 }
