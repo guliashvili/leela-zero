@@ -1,32 +1,50 @@
 import React, { createContext, useReducer } from "react";
-import { GameCore, BoardsState } from "./ish.go.logic";
+import { GameCore } from "./ish.go.logic";
 import { Color, Player, PointState } from "./ish.go";
 import { Point } from "./ish.go";
 import produce, { Draft } from "immer";
 export type Action = Readonly<
-  { type: "back" } | { type: "playMove"; move: Point } | { type: "forward" }
+  | { type: "back" }
+  | { type: "playMove"; move: Point }
+  | { type: "forward" }
+  | {
+      type: "addSuggestion";
+      playouts: number;
+      winningChance: number;
+      moves: { x: number; y: number }[];
+      boardIdentifier: number | null;
+    }
 >;
-const reducer = produce((draft: Draft<BoardsState>, action: Action) => {
+const reducer = produce((draft: Draft<GameCore>, action: Action) => {
   switch (action.type) {
     case "playMove":
-      GameCore.move(draft, action.move);
+      draft.move(draft.getCurrentBoardState(), action.move, true);
       break;
     case "back":
-      GameCore.moveBackwards(draft);
+      draft.moveBackwards();
       break;
     case "forward":
-      GameCore.moveForward(draft);
+      draft.moveForward();
+      break;
+    case "addSuggestion":
+      draft.updateAnalysis(
+        action.playouts,
+        action.winningChance,
+        action.moves.map((move) => new Point(move.x, move.y)),
+        action.boardIdentifier,
+        false
+      );
       break;
   }
 });
 
-const initialState = GameCore.getInitialBoardsState(
+const initialState = new GameCore(
   19,
   new Player(Color.BLACK, PointState.BLACK),
   new Player(Color.WHITE, PointState.WHITE)
 );
 type GoStateContextProps = {
-  gameState: BoardsState;
+  gameState: GameCore;
   dispatch(action: Action): void;
 };
 export const GoStateContext = createContext<GoStateContextProps>({

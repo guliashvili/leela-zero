@@ -1,13 +1,12 @@
 import React, { useContext } from "react";
 import Konva from "konva";
-import { Stage, Layer, Star, Text, Image } from "react-konva";
+import { Stage, Layer, Image } from "react-konva";
 
 import useImage from "use-image";
 import { Point as PointComponent } from "../../Point";
 import { GoStateContext } from "../../../context/GoState";
 import imgBoard from "../../../imgs/board.png";
 import { Point } from "../../../context/ish.go";
-import { GameCore } from "../../../context/ish.go.logic";
 
 type Props = Readonly<{ boardSize: number }>;
 const PIECE_SIZE = 27;
@@ -37,7 +36,7 @@ export const Board = (props: Props): JSX.Element => {
               point={point}
               x={point.row * PIECE_SIZE + BOARD_PADDING}
               y={point.column * PIECE_SIZE + BOARD_PADDING}
-              pointState={GameCore.getPointStateAt(
+              pointState={gameState.getPointStateAt(
                 gameState.boards[gameState.currentBoard].board,
                 point
               )}

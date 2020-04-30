@@ -45,7 +45,7 @@ public:
       app.logger().information("Request from %s", request.clientAddress().toString());
 
       response.setChunkedTransferEncoding(true);
-      response.setContentType("text/html");
+      response.setContentType("application/json");
       Parser parser;
       auto parserRequest = parser.parse(request.stream());
       Object::Ptr objectRequest = parserRequest.extract<Object::Ptr>();
@@ -84,9 +84,7 @@ public:
       }
       const auto[x, y]  = game->board.get_xy(game->get_last_move());
       const auto answer = json({{"move", {{"x", x}, {"y", y}, {"isBlack", !isBlack}}}}).dump();
-      response.send() << "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " << answer.length()
-                << "\r\n\r\n"
-                << answer;
+      response.send() << answer;
     }
     catch (const exception &e) {
       std::cerr << e.what() << std::endl;

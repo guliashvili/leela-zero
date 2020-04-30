@@ -1,27 +1,32 @@
 import { MoveError, Player, Point, PointState } from "./ish.go";
 import { cloneDeep, isEqual } from "lodash";
+import { immerable } from "immer";
+
+type BoardAnalysis = {
+  winningChance: number;
+  playouts: number;
+  isPropagated: boolean;
+};
+
 type BoardState = {
   children: { move: Point; state: number }[];
   nextHint: number | null;
   back: number | null;
   currentPlayer: Player;
   board: PointState[][];
+  analysis: null | BoardAnalysis;
   index: number;
 };
-export type BoardsState = {
+
+export class GameCore {
+  [immerable] = true;
   player1: Player;
   player2: Player;
   boardSize: number;
   currentBoard: number;
   boards: BoardState[];
-};
 
-export namespace GameCore {
-  export function getInitialBoardsState(
-    boardSize: number,
-    player1: Player,
-    player2: Player
-  ): BoardsState {
+  constructor(boardSize: number, player1: Player, player2: Player) {
     const board: PointState[][] = [];
     for (let i = 0; i < boardSize; i++) {
       board[i] = new Array(boardSize);
@@ -30,12 +35,11 @@ export namespace GameCore {
       }
     }
 
-    return {
-      player1,
-      player2,
-      boardSize,
-      currentBoard: 0,
-      boards: [
+    this.player1 = player1;
+    (this.player2 = player2),
+      (this.boardSize = boardSize),
+      (this.currentBoard = 0),
+      (this.boards = [
         {
           children: [],
           nextHint: null,
@@ -43,35 +47,67 @@ export namespace GameCore {
           currentPlayer: player2,
           board,
           index: 0,
+          analysis: null,
         },
-      ],
-    };
+      ]);
   }
-  export function getPointStateAt(
-    board: PointState[][],
-    point: Point
-  ): PointState {
+  updateAnalysis(
+    playouts: number,
+    winningChance: number,
+    moves: Point[],
+    boardIdentifier: number | null,
+    isPropagated: boolean
+  ): void {
+    const move = moves.shift();
+    if (move === undefined) {
+      return;
+    }
+
+    boardIdentifier = boardIdentifier ?? this.currentBoard;
+    const board = this.boards[boardIdentifier];
+    if (
+      board.analysis == null ||
+      (board.analysis.isPropagated && !isPropagated) ||
+      board.analysis.winningChance < winningChance
+    ) {
+      board.analysis = { playouts, winningChance, isPropagated };
+    }
+    const nextIndentifier = this.move(board, move, false);
+    if (typeof nextIndentifier === "number") {
+      this.updateAnalysis(
+        playouts,
+        1 - winningChance,
+        moves,
+        nextIndentifier,
+        true
+      );
+    }
+  }
+  getCurrentBoardState(): BoardState {
+    return this.boards[this.currentBoard];
+  }
+  getPointStateAt(board: PointState[][], point: Point): PointState {
     return board[point.column][point.row];
   }
-  function _setPointStateAt(
+  _setPointStateAt(
     board: PointState[][],
     point: Point,
     pointState: PointState
   ): void {
     board[point.column][point.row] = pointState;
   }
-  function _isUniqueBoard(
+
+  _isUniqueBoard(
     boardState: BoardState,
     backBoardState: BoardState | null
   ): boolean {
     if (backBoardState === null) {
-      console.log("ofc");
       return true;
     }
     return !isEqual(boardState.board, backBoardState.board);
   }
 
-  function _getNeighborsAt(boardSize: number, point: Point): Point[] {
+  _getNeighborsAt(boardSize: number, point: Point): Point[] {
     const steps = [
       [-1, 0],
       [0, -1],
@@ -87,29 +123,29 @@ export namespace GameCore {
       );
   }
 
-  function _getChainPoints(
+  _getChainPoints(
     board: PointState[][],
     point: Point,
     chainPoints: Point[]
   ): Point[] {
-    const pState = getPointStateAt(board, point);
+    const pState = this.getPointStateAt(board, point);
     chainPoints.push(point);
 
-    for (const nPoint of _getNeighborsAt(board.length, point)) {
-      const nState = getPointStateAt(board, nPoint);
+    for (const nPoint of this._getNeighborsAt(board.length, point)) {
+      const nState = this.getPointStateAt(board, nPoint);
       if (pState === nState && !nPoint.isInArray(chainPoints)) {
-        _getChainPoints(board, nPoint, chainPoints);
+        this._getChainPoints(board, nPoint, chainPoints);
       }
     }
     return chainPoints;
   }
 
-  function _getLibertyPoints(board: PointState[][], point: Point): number {
-    const chain = _getChainPoints(board, point, []);
+  _getLibertyPoints(board: PointState[][], point: Point): number {
+    const chain = this._getChainPoints(board, point, []);
     const libPoints = new Set();
     for (const chainPoint of chain) {
-      for (const nPoint of _getNeighborsAt(board.length, chainPoint)) {
-        const state = getPointStateAt(board, nPoint);
+      for (const nPoint of this._getNeighborsAt(board.length, chainPoint)) {
+        const state = this.getPointStateAt(board, nPoint);
         if (state === PointState.EMPTY) {
           libPoints.add(nPoint);
         }
@@ -118,18 +154,18 @@ export namespace GameCore {
     return libPoints.size;
   }
 
-  function _getCapturedPoints(board: PointState[][], point: Point): Point[] {
+  _getCapturedPoints(board: PointState[][], point: Point): Point[] {
     let capPoints: Point[] = [];
-    const pState = getPointStateAt(board, point);
+    const pState = this.getPointStateAt(board, point);
 
-    for (const nPoint of _getNeighborsAt(board.length, point)) {
-      const nState = getPointStateAt(board, nPoint);
+    for (const nPoint of this._getNeighborsAt(board.length, point)) {
+      const nState = this.getPointStateAt(board, nPoint);
       if (nState !== pState && nState !== PointState.EMPTY) {
         if (
           !nPoint.isInArray(capPoints) &&
-          _getLibertyPoints(board, nPoint) === 0
+          this._getLibertyPoints(board, nPoint) === 0
         ) {
-          const chain = _getChainPoints(board, nPoint, []);
+          const chain = this._getChainPoints(board, nPoint, []);
           capPoints = capPoints.concat(chain);
         }
       }
@@ -137,93 +173,91 @@ export namespace GameCore {
     return capPoints;
   }
 
-  function _isValidMove(
+  _isValidMove(
     boardState: BoardState,
     backBoardState: BoardState | null,
     point: Point
   ): MoveError | void {
     // Check for repeating board state
-    if (!_isUniqueBoard(boardState, backBoardState)) {
+    if (!this._isUniqueBoard(boardState, backBoardState)) {
       return MoveError.REPEAT;
     }
-    if (_getLibertyPoints(boardState.board, point) === 0) {
+    if (this._getLibertyPoints(boardState.board, point) === 0) {
       return MoveError.SUICIDE;
     }
   }
 
-  export function move(
-    boardsState: BoardsState,
-    point: Point
-  ): MoveError | void {
-    const currentBoard = boardsState.boards[boardsState.currentBoard];
-    const child = currentBoard.children.find((child) =>
+  move(
+    boardState: BoardState,
+    point: Point,
+    updateCurrent: boolean
+  ): MoveError | number {
+    const child = boardState.children.find((child) =>
       isEqual(child.move, point)
     );
     if (child !== undefined) {
-      boardsState.currentBoard = child.state;
-      console.log("uh");
-      return;
+      if (updateCurrent) {
+        this.currentBoard = child.state;
+      }
+      return child.state;
     }
 
-    if (getPointStateAt(currentBoard.board, point) !== PointState.EMPTY) {
-      console.log("ah");
+    if (this.getPointStateAt(boardState.board, point) !== PointState.EMPTY) {
       return MoveError.SUICIDE;
     }
 
     const player =
-      currentBoard.currentPlayer === boardsState.player1
-        ? boardsState.player2
-        : boardsState.player1;
-    const newBoard = cloneDeep(currentBoard.board);
+      boardState.currentPlayer === this.player1 ? this.player2 : this.player1;
+    const newBoard = cloneDeep(boardState.board);
 
-    _setPointStateAt(newBoard, point, player.pointState);
-    const capturedPoints = _getCapturedPoints(newBoard, point);
+    this._setPointStateAt(newBoard, point, player.pointState);
+    const capturedPoints = this._getCapturedPoints(newBoard, point);
     capturedPoints.forEach((capture) =>
-      _setPointStateAt(newBoard, capture, PointState.EMPTY)
+      this._setPointStateAt(newBoard, capture, PointState.EMPTY)
     );
 
     const newCurrentBoardState: BoardState = {
       children: [],
       nextHint: null,
-      back: boardsState.currentBoard,
+      back: this.currentBoard,
       currentPlayer: player,
       board: newBoard,
-      index: boardsState.boards.length,
+      index: this.boards.length,
+      analysis: null,
     };
 
-    const error = _isValidMove(
+    const error = this._isValidMove(
       newCurrentBoardState,
-      currentBoard.back === null ? null : boardsState.boards[currentBoard.back],
+      boardState.back === null ? null : this.boards[boardState.back],
       point
     );
     if (error !== undefined) {
-      console.log("well,", error);
       return error;
     }
 
+    this.boards.push(newCurrentBoardState);
     if (
-      currentBoard.children.push({
+      updateCurrent &&
+      boardState.children.push({
         move: point,
-        state: boardsState.currentBoard =
-          boardsState.boards.push(newCurrentBoardState) - 1,
+        state: this.currentBoard = this.boards.length - 1,
       }) === 1
     ) {
-      currentBoard.nextHint = currentBoard.nextHint ?? boardsState.currentBoard;
+      boardState.nextHint = boardState.nextHint ?? this.currentBoard;
     }
-    console.log("im here");
+    return newCurrentBoardState.index;
   }
 
-  export function moveBackwards(boardsState: BoardsState): void {
-    const currentBoard = boardsState.boards[boardsState.currentBoard];
+  moveBackwards(): void {
+    const currentBoard = this.boards[this.currentBoard];
     const backBoardState = currentBoard.back;
     if (backBoardState !== null) {
-      boardsState.boards[backBoardState].nextHint = currentBoard.index;
-      boardsState.currentBoard = backBoardState;
+      this.boards[backBoardState].nextHint = currentBoard.index;
+      this.currentBoard = backBoardState;
     }
   }
-  export function moveForward(boardsState: BoardsState): void {
-    const currentBoard = boardsState.boards[boardsState.currentBoard];
-    boardsState.currentBoard =
-      currentBoard.nextHint ?? boardsState.currentBoard;
+  moveForward(): void {
+    const currentBoard = this.boards[this.currentBoard];
+    this.currentBoard = currentBoard.nextHint ?? this.currentBoard;
   }
 }
