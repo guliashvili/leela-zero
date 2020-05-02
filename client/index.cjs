@@ -17,7 +17,6 @@ app.post("/suggested_move", async function (req, res) {
     commandSpec: { command: "z" },
   });
 
-  console.log("givi1 data", data.data);
   return res.json(data.data);
 });
 
@@ -48,7 +47,6 @@ app.post("/live_data", async function (req, res) {
         };
       }),
     };
-    console.log("live", moves, data);
     io.sockets.emit("live playout", data);
   }
 });

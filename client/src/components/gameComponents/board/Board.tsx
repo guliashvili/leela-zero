@@ -3,8 +3,9 @@ import Konva from "konva";
 import { Image, Layer, Stage } from "react-konva";
 
 import useImage from "use-image";
-import { Point as PointComponent } from "../../Point";
-import { Hint } from "../../Hint";
+import { Point as PointComponent } from "./unit/Point";
+import { Hint } from "./unit/Hint";
+import { Hover } from "./unit/Hover";
 import { GoStateContext } from "../../../context/GoState";
 import imgBoard from "../../../imgs/board.png";
 import { Point, PointState } from "../../../context/ish.go";
@@ -21,7 +22,7 @@ export const Board = (props: Props): JSX.Element => {
     dispatch({ type: "playMove", move: point });
   }
   function onMouseEnter(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
-    // dispatch({ type: "mouseEnter", point: point });
+    dispatch({ type: "mouseEnter", point: point });
   }
 
   return (
@@ -35,27 +36,18 @@ export const Board = (props: Props): JSX.Element => {
             i % gameState.boardSize,
             Math.floor(i / gameState.boardSize)
           );
-          const pointS = gameState.getPointStateAt(
+          const pointS = gameState.at(
             gameState.getCurrentBoardState().board,
             point
           );
 
           return (
             <PointComponent
-              key={i}
+              key={`point-${i}`}
               point={point}
               x={point.row * PIECE_SIZE + BOARD_PADDING}
               y={point.column * PIECE_SIZE + BOARD_PADDING}
-              pointState={
-                pointS === PointState.EMPTY
-                  ? {
-                      state: PointState.EMPTY,
-                      currentColor: gameState.getCurrentBoardState()
-                        .currentPlayer.color,
-                      isHover: isEqual(gameState.mouseEnterPoint, point),
-                    }
-                  : { state: pointS }
-              }
+              state={pointS}
               onClick={onClick}
               onMouseEnter={onMouseEnter}
             />
@@ -63,29 +55,42 @@ export const Board = (props: Props): JSX.Element => {
         })}
       </Layer>
       <Layer listening={false}>
-        {[...Array(gameState.boardSize * gameState.boardSize)]
-          .map((_, i) => {
-            const point = new Point(
-              i % gameState.boardSize,
-              Math.floor(i / gameState.boardSize)
-            );
+        {[...Array(gameState.boardSize * gameState.boardSize)].map((_, i) => {
+          const point = new Point(
+            i % gameState.boardSize,
+            Math.floor(i / gameState.boardSize)
+          );
 
-            const hotness = gameState.getCurrentBoardHotness(point);
-            if (hotness === null) {
-              return null;
-            }
+          return (
+            <Hint
+              key={`hint-${i}`}
+              x={point.row * PIECE_SIZE + BOARD_PADDING}
+              y={point.column * PIECE_SIZE + BOARD_PADDING}
+              hotness={gameState.getCurrentBoardHotness(point)}
+              radius={PIECE_SIZE / 2.0}
+            />
+          );
+        })}
+      </Layer>
+      <Layer listening={false}>
+        {[...Array(gameState.boardSize * gameState.boardSize)].map((_, i) => {
+          const point = new Point(
+            i % gameState.boardSize,
+            Math.floor(i / gameState.boardSize)
+          );
 
-            return (
-              <Hint
-                key={i * 1000}
-                x={point.row * PIECE_SIZE + BOARD_PADDING}
-                y={point.column * PIECE_SIZE + BOARD_PADDING}
-                hotness={hotness}
-                radius={PIECE_SIZE / 2.0}
-              />
-            );
-          })
-          .filter((component) => component != null)}
+          return (
+            <Hover
+              isHover={isEqual(gameState.mouseEnterPoint, point)}
+              key={`hover-${i}`}
+              currentColor={
+                gameState.getCurrentBoardState().currentPlayer.color
+              }
+              x={point.row * PIECE_SIZE + BOARD_PADDING}
+              y={point.column * PIECE_SIZE + BOARD_PADDING}
+            />
+          );
+        })}
       </Layer>
     </Stage>
   );

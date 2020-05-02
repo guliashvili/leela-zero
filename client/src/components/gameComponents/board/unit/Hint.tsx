@@ -2,13 +2,16 @@ import React from "react";
 import { Circle } from "react-konva";
 
 type Props = Readonly<{
-  hotness: number;
+  hotness: number | null;
   x: number;
   y: number;
   radius: number;
 }>;
 export const Hint = (props: Props) => {
   const { radius, x, y, hotness } = props;
+  if (hotness === null) {
+    return null;
+  }
   return (
     <Circle
       listening={false}

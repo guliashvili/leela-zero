@@ -19,17 +19,15 @@ export namespace BackEndBird {
         (child) => child.state === currentBoard
       );
       if (actualChildUsed === undefined) {
-        console.log("actual child cant be not found");
         break;
       }
       gameHistory.unshift({
         x: actualChildUsed.move.row,
         y: actualChildUsed.move.column,
-        isBlack: backBoardState.currentPlayer.color === Color.WHITE,
+        isBlack: backBoardState.currentPlayer.color === Color.BLACK,
       });
       currentBoard = backBoard;
     }
-    console.log("sending", gameHistory);
 
     const response = await axios
       .post("/suggested_move", {
@@ -37,7 +35,6 @@ export namespace BackEndBird {
         boardIdentifier: `${gameCore.currentBoard}`,
       })
       .catch((error) => console.log("response error", error));
-    console.log("givi response", response);
 
     return new Point(
       response["data"]["move"]["x"],

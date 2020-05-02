@@ -19,7 +19,7 @@ export type Action = Readonly<
 const reducer = produce((draft: Draft<GameCore>, action: Action) => {
   switch (action.type) {
     case "playMove":
-      draft.move(draft.getCurrentBoardState(), action.move, true);
+      draft.moveCurrent(action.move);
       break;
     case "back":
       draft.moveBackwards();

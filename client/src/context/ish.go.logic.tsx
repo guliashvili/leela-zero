@@ -46,7 +46,7 @@ export class GameCore {
           children: [],
           nextHint: null,
           back: null,
-          currentPlayer: player2,
+          currentPlayer: player1,
           board,
           index: 0,
           analysis: null,
@@ -54,6 +54,11 @@ export class GameCore {
       ]);
   }
   setMouseEnter(point: Point): void {
+    if (
+      this.at(this.getCurrentBoardState().board, point) !== PointState.EMPTY
+    ) {
+      return;
+    }
     this.mouseEnterPoint = point;
   }
   getCurrentBoardHotness(point: Point): number | null {
@@ -90,7 +95,7 @@ export class GameCore {
     ) {
       board.analysis = { playouts, winningChance, isPropagated };
     }
-    const nextIndentifier = this.move(board, move, false);
+    const nextIndentifier = this.move(board, move);
     if (typeof nextIndentifier === "number") {
       this.updateAnalysis(
         playouts,
@@ -104,14 +109,10 @@ export class GameCore {
   getCurrentBoardState(): BoardState {
     return this.boards[this.currentBoard];
   }
-  getPointStateAt(board: PointState[][], point: Point): PointState {
+  at(board: PointState[][], point: Point): PointState {
     return board[point.column][point.row];
   }
-  _setPointStateAt(
-    board: PointState[][],
-    point: Point,
-    pointState: PointState
-  ): void {
+  _setAt(board: PointState[][], point: Point, pointState: PointState): void {
     board[point.column][point.row] = pointState;
   }
 
@@ -146,11 +147,11 @@ export class GameCore {
     point: Point,
     chainPoints: Point[]
   ): Point[] {
-    const pState = this.getPointStateAt(board, point);
+    const pState = this.at(board, point);
     chainPoints.push(point);
 
     for (const nPoint of this._getNeighborsAt(board.length, point)) {
-      const nState = this.getPointStateAt(board, nPoint);
+      const nState = this.at(board, nPoint);
       if (pState === nState && !nPoint.isInArray(chainPoints)) {
         this._getChainPoints(board, nPoint, chainPoints);
       }
@@ -163,7 +164,7 @@ export class GameCore {
     const libPoints = new Set();
     for (const chainPoint of chain) {
       for (const nPoint of this._getNeighborsAt(board.length, chainPoint)) {
-        const state = this.getPointStateAt(board, nPoint);
+        const state = this.at(board, nPoint);
         if (state === PointState.EMPTY) {
           libPoints.add(nPoint);
         }
@@ -174,10 +175,10 @@ export class GameCore {
 
   _getCapturedPoints(board: PointState[][], point: Point): Point[] {
     let capPoints: Point[] = [];
-    const pState = this.getPointStateAt(board, point);
+    const pState = this.at(board, point);
 
     for (const nPoint of this._getNeighborsAt(board.length, point)) {
-      const nState = this.getPointStateAt(board, nPoint);
+      const nState = this.at(board, nPoint);
       if (nState !== pState && nState !== PointState.EMPTY) {
         if (
           !nPoint.isInArray(capPoints) &&
@@ -205,22 +206,15 @@ export class GameCore {
     }
   }
 
-  move(
-    boardState: BoardState,
-    point: Point,
-    updateCurrent: boolean
-  ): MoveError | number {
+  move(boardState: BoardState, point: Point): MoveError | number {
     const child = boardState.children.find((child) =>
       isEqual(child.move, point)
     );
     if (child !== undefined) {
-      if (updateCurrent) {
-        this.currentBoard = child.state;
-      }
       return child.state;
     }
 
-    if (this.getPointStateAt(boardState.board, point) !== PointState.EMPTY) {
+    if (this.at(boardState.board, point) !== PointState.EMPTY) {
       return MoveError.SUICIDE;
     }
 
@@ -228,10 +222,10 @@ export class GameCore {
       boardState.currentPlayer === this.player1 ? this.player2 : this.player1;
     const newBoard = cloneDeep(boardState.board);
 
-    this._setPointStateAt(newBoard, point, player.pointState);
+    this._setAt(newBoard, point, boardState.currentPlayer.pointState);
     const capturedPoints = this._getCapturedPoints(newBoard, point);
     capturedPoints.forEach((capture) =>
-      this._setPointStateAt(newBoard, capture, PointState.EMPTY)
+      this._setAt(newBoard, capture, PointState.EMPTY)
     );
 
     const newCurrentBoardState: BoardState = {
@@ -258,11 +252,19 @@ export class GameCore {
       state: this.boards.push(newCurrentBoardState) - 1,
     });
 
-    if (updateCurrent && boardState.children.length === 1) {
-      this.currentBoard = this.boards.length - 1;
+    if (boardState.children.length === 1) {
       boardState.nextHint = boardState.nextHint ?? this.currentBoard;
     }
     return newCurrentBoardState.index;
+  }
+  moveCurrent(point: Point): void {
+    const result = this.move(this.getCurrentBoardState(), point);
+    if (typeof result === "number") {
+      this.currentBoard = result;
+    }
+    if (isEqual(this.mouseEnterPoint, point)) {
+      this.mouseEnterPoint = null;
+    }
   }
 
   moveBackwards(): void {

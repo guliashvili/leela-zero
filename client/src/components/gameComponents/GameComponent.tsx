@@ -9,9 +9,7 @@ export const GameComponent = () => {
   useEffect(() => {
     const socket = openSocket("http://localhost:9000");
     socket.on("live playout", (data) => {
-      // console.log("got it ", data);
       dispatch({ type: "addSuggestion", ...data });
-      console.log("after add suggestion", data, gameState);
     });
   });
   return (
