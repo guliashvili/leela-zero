@@ -6,13 +6,14 @@ import produce, { Draft } from "immer";
 export type Action = Readonly<
   | { type: "back" }
   | { type: "playMove"; move: Point }
+  | { type: "mouseEnter"; point: Point }
   | { type: "forward" }
   | {
       type: "addSuggestion";
       playouts: number;
       winningChance: number;
       moves: { x: number; y: number }[];
-      boardIdentifier: number | null;
+      boardIdentifier: number;
     }
 >;
 const reducer = produce((draft: Draft<GameCore>, action: Action) => {
@@ -25,6 +26,9 @@ const reducer = produce((draft: Draft<GameCore>, action: Action) => {
       break;
     case "forward":
       draft.moveForward();
+      break;
+    case "mouseEnter":
+      draft.setMouseEnter(action.point);
       break;
     case "addSuggestion":
       draft.updateAnalysis(

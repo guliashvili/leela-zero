@@ -25,6 +25,7 @@ export class GameCore {
   boardSize: number;
   currentBoard: number;
   boards: BoardState[];
+  mouseEnterPoint: Point | null;
 
   constructor(boardSize: number, player1: Player, player2: Player) {
     const board: PointState[][] = [];
@@ -35,6 +36,7 @@ export class GameCore {
       }
     }
 
+    this.mouseEnterPoint = null;
     this.player1 = player1;
     (this.player2 = player2),
       (this.boardSize = boardSize),
@@ -51,11 +53,28 @@ export class GameCore {
         },
       ]);
   }
+  setMouseEnter(point: Point): void {
+    this.mouseEnterPoint = point;
+  }
+  getCurrentBoardHotness(point: Point): number | null {
+    const currentBoardState = this.getCurrentBoardState();
+    const child = currentBoardState.children.find((child) =>
+      isEqual(child.move, point)
+    );
+    if (child === undefined) {
+      return null;
+    }
+    const analysis = this.boards[child.state].analysis;
+    if (analysis === null) {
+      return null;
+    }
+    return 1 - analysis.winningChance;
+  }
   updateAnalysis(
     playouts: number,
     winningChance: number,
     moves: Point[],
-    boardIdentifier: number | null,
+    boardIdentifier: number,
     isPropagated: boolean
   ): void {
     const move = moves.shift();
@@ -63,7 +82,6 @@ export class GameCore {
       return;
     }
 
-    boardIdentifier = boardIdentifier ?? this.currentBoard;
     const board = this.boards[boardIdentifier];
     if (
       board.analysis == null ||
@@ -219,7 +237,7 @@ export class GameCore {
     const newCurrentBoardState: BoardState = {
       children: [],
       nextHint: null,
-      back: this.currentBoard,
+      back: boardState.index,
       currentPlayer: player,
       board: newBoard,
       index: this.boards.length,
@@ -235,14 +253,13 @@ export class GameCore {
       return error;
     }
 
-    this.boards.push(newCurrentBoardState);
-    if (
-      updateCurrent &&
-      boardState.children.push({
-        move: point,
-        state: this.currentBoard = this.boards.length - 1,
-      }) === 1
-    ) {
+    boardState.children.push({
+      move: point,
+      state: this.boards.push(newCurrentBoardState) - 1,
+    });
+
+    if (updateCurrent && boardState.children.length === 1) {
+      this.currentBoard = this.boards.length - 1;
       boardState.nextHint = boardState.nextHint ?? this.currentBoard;
     }
     return newCurrentBoardState.index;

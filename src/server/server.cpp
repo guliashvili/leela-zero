@@ -8,11 +8,11 @@
 #include <future>
 
 // Added for the default_resource example
-#include <algorithm>
-#include <boost/filesystem.hpp>
+
 #include <fstream>
 #include <vector>
 
+#include <mutex>
 using namespace std;
 #include   "Training.h"
 #include <nlohmann/json.hpp>
@@ -34,11 +34,6 @@ using namespace Poco::JSON;
 
 class HelloRequestHandler: public HTTPRequestHandler
 {
-private:
-    const  std::vector<std::string> argv;
-public:
-    HelloRequestHandler(std::vector<std::string> argv): argv{argv}{
-    }
     void handleRequest(HTTPServerRequest& request, HTTPServerResponse& response)
     {
       Application& app = Application::instance();
@@ -50,17 +45,14 @@ public:
       auto parserRequest = parser.parse(request.stream());
       Object::Ptr objectRequest = parserRequest.extract<Object::Ptr>();
 
-      std::vector<char*> cargv;
-      cargv.reserve(argv.size());
+      char* z[4] = {"self", "-w","/Users/gguli/Desktop/25134cb83e2be1166e1bd9ee160d9e6a8fcc32f0a843242461681a340bd93e17", "--noponder"};
 
-      for(const auto &s : argv) {
-        cargv.push_back((char *) (s.c_str()));
-      }
-       char **a = &(cargv[0]);
-      char* z[6] = {"self", "-w", "/Users/gguli/Desktop/98ae471207c26af3946880caf9daaaa2d3db77b1e212660f8ab6a2b2e11a21dd", "-p", "1000", "--noponder"};
-      static auto game = init(6, z);
+      static std::mutex g_pages_mutex;
 
-    Training::clear_training();
+
+      std::lock_guard<std::mutex> guard(g_pages_mutex);
+      static auto game = init(4, z);
+
     game->reset_game();
 
     try {
@@ -71,10 +63,12 @@ public:
         const auto x = move->getValue<int>("x");
         const auto y = move->getValue<int>("y");
         isBlack = move->getValue<bool>("isBlack");
+        cerr<<"got"<<x<<' '<<y<<' '<<isBlack<<endl;
 
         const auto vertex = game->board.get_vertex(x, y);
         game->play_move((int) !isBlack, vertex);
       }
+      boardIdentifier = objectRequest->getValue<std::string>("boardIdentifier");
 
       const auto commandSpec = objectRequest->getObject("commandSpec");
       const auto command = commandSpec->getValue<string>("command");
@@ -83,6 +77,7 @@ public:
         GTP::execute(*game, "lz-genmove_analyze " + (game->board.black_to_move() ? string("b") : string("w")));
       }
       const auto[x, y]  = game->board.get_xy(game->get_last_move());
+      game->display_state();
       const auto answer = json({{"move", {{"x", x}, {"y", y}, {"isBlack", !isBlack}}}}).dump();
       response.send() << answer;
     }
@@ -98,14 +93,9 @@ public:
 
 class HelloRequestHandlerFactory: public HTTPRequestHandlerFactory
 {
-private:
-    const const std::vector<std::string> argv;
-public:
-    HelloRequestHandlerFactory(std::vector<std::string> argv): argv{argv}{
-    }
     HTTPRequestHandler* createRequestHandler(const HTTPServerRequest&)
     {
-      return new HelloRequestHandler(argv);
+      return new HelloRequestHandler();
     }
 };
 
@@ -116,20 +106,13 @@ class WebServerApp: public ServerApplication
       loadConfiguration();
       ServerApplication::initialize(self);
     }
-     void defineOptions(
-            OptionSet & options
-    ){
-       Poco::Util::Application::defineOptions(options);
-      options.addOption(Poco::Util::Option("w", "w", "model").required(true).repeatable(false));
-       options.addOption(Poco::Util::Option("p", "p", "depth").required(true).repeatable(false));
-       options.addOption(Poco::Util::Option("noponder", "", "nopon").required(true).repeatable(false));
-    }
 
-    int main(const std::vector<std::string>& argv)
+
+    int main(const std::vector<std::string>& )
     {
       UInt16 port = static_cast<UInt16>(config().getUInt("port", 1999));
 
-      HTTPServer srv(new HelloRequestHandlerFactory(argv), port);
+      HTTPServer srv(new HelloRequestHandlerFactory(), port);
       srv.start();
       waitForTerminationRequest();
       srv.stop();

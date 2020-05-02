@@ -11,8 +11,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <sstream>
-#include <string>
 
 #include "GTP.h"
 #include "GameState.h"
@@ -22,6 +20,8 @@
 #include "Zobrist.h"
 using namespace Utils;
 using namespace std;
+
+std::string boardIdentifier;
 
 static void license_blurb() {
   printf(
@@ -570,5 +570,5 @@ void ofPostRequest(string url, string body) {
   }
 }
 void leelaProcessNews(std::string line) {
-  ofPostRequest("http://127.0.0.1/live_data", json({{"line",  line}}).dump());
+  ofPostRequest("http://127.0.0.1/live_data", json({{"line",  line}, {"boardIdentifier", boardIdentifier}}).dump());
 }

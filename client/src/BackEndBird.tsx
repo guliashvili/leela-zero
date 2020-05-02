@@ -25,14 +25,16 @@ export namespace BackEndBird {
       gameHistory.unshift({
         x: actualChildUsed.move.row,
         y: actualChildUsed.move.column,
-        isBlack: backBoardState.currentPlayer.color === Color.BLACK,
+        isBlack: backBoardState.currentPlayer.color === Color.WHITE,
       });
       currentBoard = backBoard;
     }
+    console.log("sending", gameHistory);
 
     const response = await axios
       .post("/suggested_move", {
         moves: gameHistory,
+        boardIdentifier: `${gameCore.currentBoard}`,
       })
       .catch((error) => console.log("response error", error));
     console.log("givi response", response);

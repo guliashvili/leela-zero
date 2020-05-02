@@ -10,10 +10,10 @@ app.use(express.json());
 const server = require("http").createServer(app);
 const io = require("socket.io").listen(port2);
 app.post("/suggested_move", async function (req, res) {
-  const gameHistory = req.body;
-  console.log("givi history", gameHistory);
+  const { boardIdentifier, moves } = req.body;
   const data = await axios.post("http://127.0.0.1:1999/json", {
-    moves: gameHistory["moves"],
+    moves,
+    boardIdentifier,
     commandSpec: { command: "z" },
   });
 
@@ -23,6 +23,7 @@ app.post("/suggested_move", async function (req, res) {
 
 app.post("/live_data", async function (req, res) {
   const line = req.body.line.trim();
+  const boardIdentifier = req.body.boardIdentifier;
 
   const thinkingRe = /(?:Thinking at most )(.*)(?: seconds)/g;
   const l1 = thinkingRe.exec(line);
@@ -33,19 +34,21 @@ app.post("/live_data", async function (req, res) {
   const [, playoutsNum, winRatio, moves] = l2 == null ? [] : l2;
 
   if (thinking != null) {
-    io.sockets.emit("live thinking", { thinking });
+    io.sockets.emit("live thinking", { boardIdentifier, thinking });
   } else if (playoutsNum != null && winRatio != null && moves != null) {
     const data = {
-      boardIdentifier: null,
+      boardIdentifier,
       playouts: parseInt(playoutsNum),
       winningChance: parseFloat(winRatio) / 100.0,
       moves: moves.split(" ").map((move) => {
         return {
-          y: move[0].charCodeAt(0) - "A".charCodeAt(0),
-          x: move[1].charCodeAt(0) - "1".charCodeAt(0),
+          y: parseInt(move.substr(1)) - 1,
+          x:
+            move[0].charCodeAt(0) - "A".charCodeAt(0) - (move[0] > "I" ? 1 : 0),
         };
       }),
     };
+    console.log("live", moves, data);
     io.sockets.emit("live playout", data);
   }
 });
