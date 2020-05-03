@@ -5,7 +5,7 @@ import { GoStateContext } from "../../context/GoState";
 import openSocket from "socket.io-client";
 
 export const GameComponent = () => {
-  const { gameState, dispatch } = useContext(GoStateContext);
+  const { dispatch } = useContext(GoStateContext);
   useEffect(() => {
     const socket = openSocket("http://localhost:9000");
     socket.on("live playout", (data) => {

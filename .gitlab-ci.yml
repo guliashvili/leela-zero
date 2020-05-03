@@ -1,0 +1,12 @@
+deploy:
+  stage: deploy
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest # see the note below
+  variables:
+    CI_AWS_ECS_CLUSTER: my-cluster
+    CI_AWS_ECS_SERVICE: my-service
+    CI_AWS_ECS_TASK_DEFINITION: my-task-definition
+  include:
+    - template: Deploy-ECS.gitlab-ci.yml
+  script:
+    - aws s3 ...
+    - aws create-deployment ...

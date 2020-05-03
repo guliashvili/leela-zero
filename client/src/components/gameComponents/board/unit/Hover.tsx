@@ -1,15 +1,7 @@
 import React from "react";
 import useImage from "use-image";
-import { Circle, Layer, Image } from "react-konva";
-import {
-  Color,
-  Point as RealPoint,
-  PointState,
-} from "../../../../context/ish.go";
-import Konva from "konva";
-import imgPieceBlack from "../../../../imgs/piece-black.png";
-import imgPieceWhite from "../../../../imgs/piece-white.png";
-import imgTransparent from "../../../../imgs/transparent-stone.png";
+import { Image } from "react-konva";
+import { Color } from "../../../../context/ish.go";
 import imgPieceBlackTransparent from "../../../../imgs/piece-black-transparent.png";
 import imgPieceWhiteTransparent from "../../../../imgs/piece-white-transparent.png";
 

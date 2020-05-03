@@ -25,7 +25,8 @@ export class GameCore {
   boardSize: number;
   currentBoard: number;
   boards: BoardState[];
-  mouseEnterPoint: Point | null;
+  mousePoint: Point | null;
+  isPendingRecommendation: boolean;
 
   constructor(boardSize: number, player1: Player, player2: Player) {
     const board: PointState[][] = [];
@@ -36,7 +37,8 @@ export class GameCore {
       }
     }
 
-    this.mouseEnterPoint = null;
+    this.isPendingRecommendation = false;
+    this.mousePoint = null;
     this.player1 = player1;
     (this.player2 = player2),
       (this.boardSize = boardSize),
@@ -53,13 +55,14 @@ export class GameCore {
         },
       ]);
   }
-  setMouseEnter(point: Point): void {
+  setMouse(point: Point | null): void {
     if (
+      point !== null &&
       this.at(this.getCurrentBoardState().board, point) !== PointState.EMPTY
     ) {
       return;
     }
-    this.mouseEnterPoint = point;
+    this.mousePoint = point;
   }
   getCurrentBoardHotness(point: Point): number | null {
     const currentBoardState = this.getCurrentBoardState();
@@ -262,8 +265,8 @@ export class GameCore {
     if (typeof result === "number") {
       this.currentBoard = result;
     }
-    if (isEqual(this.mouseEnterPoint, point)) {
-      this.mouseEnterPoint = null;
+    if (isEqual(this.mousePoint, point)) {
+      this.mousePoint = null;
     }
   }
 

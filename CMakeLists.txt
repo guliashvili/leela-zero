@@ -20,7 +20,6 @@ include(GNUInstallDirs)
 project(leelaz)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
-add_subdirectory(gtest EXCLUDE_FROM_ALL) # We don't want to install gtest, exclude it from `all`
 
 # Required Packages
 set(Boost_MIN_VERSION "1.58.0")
@@ -88,7 +87,7 @@ if(USE_HALF)
     add_definitions(-DUSE_HALF)
 endif()
 
-set(IncludePath "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/src/Eigen")
+set(IncludePath "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(SrcPath "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 include_directories(${IncludePath})
@@ -111,15 +110,6 @@ list(REMOVE_ITEM leelaz_SRC ${server_MAIN})
 
 # Reuse for leelaz and gtest
 add_library(objs OBJECT ${leelaz_SRC})
-
-add_executable(leelaz $<TARGET_OBJECTS:objs> ${leelaz_MAIN})
-
-target_link_libraries(leelaz ${Boost_LIBRARIES})
-target_link_libraries(leelaz ${BLAS_LIBRARIES})
-target_link_libraries(leelaz ${OpenCL_LIBRARIES})
-target_link_libraries(leelaz ${ZLIB_LIBRARIES})
-target_link_libraries(leelaz ${CMAKE_THREAD_LIBS_INIT})
-install(TARGETS leelaz DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 if(Qt5Core_FOUND)
     if(NOT Qt5Core_VERSION VERSION_LESS "5.3.0")
@@ -146,20 +136,6 @@ set_target_properties(server PROPERTIES
         CXX_STANDARD 17
         CXX_EXTENSIONS ON
         )
-
-# Google Test below
-file(GLOB tests_SRC "${SrcPath}/tests/*.cpp")
-
-add_executable(tests ${tests_SRC} $<TARGET_OBJECTS:objs>)
-if(GccSpecificFlags)
-    target_compile_options(tests PRIVATE "-Wno-unused-variable")
-endif()
-
-target_link_libraries(tests ${Boost_LIBRARIES})
-target_link_libraries(tests ${BLAS_LIBRARIES})
-target_link_libraries(tests ${OpenCL_LIBRARIES})
-target_link_libraries(tests ${ZLIB_LIBRARIES})
-target_link_libraries(tests gtest_main ${CMAKE_THREAD_LIBS_INIT})
 
 include(GetGitRevisionDescription)
 git_describe(VERSION --tags)

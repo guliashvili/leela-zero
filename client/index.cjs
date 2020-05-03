@@ -30,7 +30,17 @@ app.post("/live_data", async function (req, res) {
 
   const playoutsRe = /(?:Playouts: )(.*)(?:, Win: )(.*)(?:%, PV: )(.*)$/g;
   const l2 = playoutsRe.exec(line);
-  const [, playoutsNum, winRatio, moves] = l2 == null ? [] : l2;
+  let [, playoutsNum, winRatio, moves] = l2 == null ? [] : l2;
+
+  const finalPlayoutsRe = /(?:.* ->    )(.*)(?: \(V: )(.*)(?:%\) \(LCB: .*%\) \(N: .*%\) PV: )(.*)$/g;
+  const l3 = finalPlayoutsRe.exec(line);
+  const [, playoutsNum2, winRatio2, moves2] = l3 == null ? [] : l3;
+  if (playoutsNum == null && winRatio == null && moves == null) {
+    playoutsNum = playoutsNum2;
+    winRatio = winRatio2;
+    moves = moves2;
+  }
+  console.log({ line, l1, l2, l3 });
 
   if (thinking != null) {
     io.sockets.emit("live thinking", { boardIdentifier, thinking });

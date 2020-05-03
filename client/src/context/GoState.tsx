@@ -3,11 +3,15 @@ import { GameCore } from "./ish.go.logic";
 import { Color, Player, PointState } from "./ish.go";
 import { Point } from "./ish.go";
 import produce, { Draft } from "immer";
+import { BackEndBird } from "../BackEndBird";
+
 export type Action = Readonly<
   | { type: "back" }
   | { type: "playMove"; move: Point }
-  | { type: "mouseEnter"; point: Point }
+  | { type: "mouse"; point: Point | null }
+  | { type: "pendingRecommendation" }
   | { type: "forward" }
+  | { type: "genAnalysis" }
   | {
       type: "addSuggestion";
       playouts: number;
@@ -24,11 +28,17 @@ const reducer = produce((draft: Draft<GameCore>, action: Action) => {
     case "back":
       draft.moveBackwards();
       break;
+    case "genAnalysis":
+      BackEndBird.getNextSuggestedMove(draft);
+      break;
     case "forward":
       draft.moveForward();
       break;
-    case "mouseEnter":
-      draft.setMouseEnter(action.point);
+    case "mouse":
+      draft.setMouse(action.point);
+      break;
+    case "pendingRecommendation":
+      draft.isPendingRecommendation = true;
       break;
     case "addSuggestion":
       draft.updateAnalysis(
