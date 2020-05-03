@@ -48,6 +48,7 @@ if(USE_BLAS)
 else()
     message(STATUS "Using built-in matrix library.")
 endif()
+message("${CMAKE_CXX_COMPILER_ID} compiler")
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -75,7 +76,7 @@ if(GccSpecificFlags)
       -Wno-mismatched-tags")
     set(GCC_FLAGS "${GCC_COMPILE_FLAGS} ${GCC_DISABLED_WARNING_COMPILE_FLAGS}")
     set(CMAKE_CXX_FLAGS_DEBUG "${GCC_FLAGS} -g -Og")
-    set(CMAKE_CXX_FLAGS_RELEASE "${GCC_FLAGS} -g -O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "${GCC_FLAGS} -g -oFast -march=native -DNDEBUG")
     set(CMAKE_EXE_LINKER_FLAGS "-flto -g")
 endif(GccSpecificFlags)
 
@@ -120,7 +121,7 @@ target_link_libraries(server ${ZLIB_LIBRARIES})
 target_link_libraries(server ${CONAN_LIBS})
 
 set_target_properties(server PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_EXTENSIONS ON
         )
 
