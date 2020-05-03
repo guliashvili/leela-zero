@@ -37,7 +37,7 @@ export const Point = (props: Props) => {
 
   return (
     <Image
-      listening={props.state === PointState.EMPTY}
+      listening={true}
       x={props.x}
       y={props.y}
       image={image}

@@ -1,4 +1,4 @@
-import React, { useContext, useCallback } from "react";
+import React, { useContext } from "react";
 import Konva from "konva";
 import { Image, Layer, Stage } from "react-konva";
 
@@ -9,7 +9,7 @@ import { Hover } from "./unit/Hover";
 import { GoStateContext } from "../../../context/GoState";
 import { SettingsStateContext } from "../../../context/SettingsState";
 import imgBoard from "../../../imgs/board.png";
-import { Point } from "../../../context/ish.go";
+import { Point, PointState } from "../../../context/ish.go";
 import { isEqual } from "lodash";
 
 type Props = Readonly<{ boardSize: number }>;
@@ -23,10 +23,17 @@ export const Board = (props: Props): JSX.Element => {
   function onClick(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
     dispatchGo({ type: "playMove", move: point });
     dispatchSettings({ type: "recommendationLoadStatus", status: "Loading" });
-    dispatchGo({ type: "genAnalysis" });
+    // dispatchGo({ type: "genAnalysis" });
   }
   function onMouseEnter(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
-    dispatchGo({ type: "mouse", point: point });
+    dispatchGo({
+      type: "mouse",
+      point:
+        gameState.at(gameState.getCurrentBoardState().board, point) ===
+        PointState.EMPTY
+          ? point
+          : null,
+    });
   }
 
   return (
