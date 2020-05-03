@@ -35,7 +35,9 @@ export const Controller = () => {
       <TextField
         disabled
         id="standard-disabled"
-        label={winningChance == null ? "Not Sure" : `${winningChance}`}
+        label={
+          winningChance == null ? "Not Sure" : `${winningChance.toFixed(4)}`
+        }
       />
     </div>
   );
