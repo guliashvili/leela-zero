@@ -48,7 +48,6 @@ if(USE_BLAS)
 else()
     message(STATUS "Using built-in matrix library.")
 endif()
-find_package(Qt5Core)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -110,18 +109,6 @@ list(REMOVE_ITEM leelaz_SRC ${server_MAIN})
 
 # Reuse for leelaz and gtest
 add_library(objs OBJECT ${leelaz_SRC})
-
-if(Qt5Core_FOUND)
-    if(NOT Qt5Core_VERSION VERSION_LESS "5.3.0")
-        add_subdirectory(autogtp)
-        add_subdirectory(validation)
-    else()
-        message(WARNING "Qt ${Qt5Core_VERSION} is found but does not met required version 5.3.0, \
-        build target for `autogtp` and `validation` is disabled.")
-    endif()
-else()
-    message(WARNING "Qt is not found, build for `autogtp` and `validation` is disabled")
-endif()
 
 # HTTP server
 add_executable(server ${server_MAIN} $<TARGET_OBJECTS:objs>)
