@@ -1,6 +1,7 @@
 leelaz
 *.o
 *.d
+cmake-build-release/
 .vscode/settings.json
 training/tf/leelalogs
 training/tf/checkpoint

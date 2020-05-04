@@ -48,7 +48,6 @@
 #include "GameState.h"
 #include "TimeControl.h"
 #include "Timing.h"
-#include "Training.h"
 #include "Utils.h"
 #ifdef USE_OPENCL
 #include "OpenCLScheduler.h"
@@ -838,7 +837,6 @@ int UCTSearch::think(int color, passflag_t passflag) {
     // Display search info.
     myprintf("\n");
     dump_stats(m_rootstate, *m_root);
-    Training::record(m_network, m_rootstate, *m_root);
 
     Time elapsed;
     int elapsed_centis = Time::timediff_centis(start, elapsed);

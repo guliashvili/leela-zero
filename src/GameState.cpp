@@ -28,7 +28,6 @@
 */
 
 #include "GameState.h"
-#include "Network.h"
 
 #include <algorithm>
 #include <array>

@@ -47,10 +47,8 @@
 #include "FastBoard.h"
 #include "FullBoard.h"
 #include "GameState.h"
-#include "Network.h"
 #include "SGFTree.h"
 #include "SMP.h"
-#include "Training.h"
 #include "UCTSearch.h"
 #include "Utils.h"
 
@@ -97,7 +95,6 @@ FILE* cfg_logfile_handle;
 bool cfg_quiet;
 std::string cfg_options_str;
 bool cfg_benchmark;
-bool cfg_cpu_only;
 AnalyzeTags cfg_analyze_tags;
 
 /* Parses tags for the lz-analyze GTP command and friends */
@@ -358,11 +355,6 @@ void GTP::setup_default_parameters() {
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
-#ifdef USE_CPU_ONLY
-    cfg_cpu_only = true;
-#else
-    cfg_cpu_only = false;
-#endif
 
     cfg_analyze_tags = AnalyzeTags{};
 
@@ -563,7 +555,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 gtp_fail_printf(id, "unacceptable size");
             } else {
                 float old_komi = game.get_komi();
-                Training::clear_training();
                 game.init_game(tmp, old_komi);
                 gtp_printf(id, "");
             }
@@ -573,7 +564,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("clear_board") == 0) {
-        Training::clear_training();
         game.reset_game();
         search = std::make_unique<UCTSearch>(game, *s_network);
         assert(UCTNodePointer::get_tree_size() == 0);
@@ -1088,7 +1078,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         // tmp will eat "load_training"
         cmdstream >> tmp >> filename;
 
-        Training::load_training(filename);
 
         if (!cmdstream.fail()) {
             gtp_printf(id, "");
@@ -1104,7 +1093,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         // tmp will eat "save_training"
         cmdstream >> tmp >>  filename;
 
-        Training::save_training(filename);
 
         if (!cmdstream.fail()) {
             gtp_printf(id, "");
@@ -1130,7 +1118,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             return;
         }
 
-        Training::dump_training(who_won, filename);
 
         if (!cmdstream.fail()) {
             gtp_printf(id, "");
@@ -1146,7 +1133,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         // tmp will eat "dump_debug"
         cmdstream >> tmp >> filename;
 
-        Training::dump_debug(filename);
 
         if (!cmdstream.fail()) {
             gtp_printf(id, "");
@@ -1162,7 +1148,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         // tmp will eat dump_supervised
         cmdstream >> tmp >> sgfname >> outname;
 
-        Training::dump_supervised(sgfname, outname);
 
         if (!cmdstream.fail()) {
             gtp_printf(id, "");

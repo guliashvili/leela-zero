@@ -14,7 +14,6 @@
 
 #include <mutex>
 using namespace std;
-#include   "Training.h"
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 

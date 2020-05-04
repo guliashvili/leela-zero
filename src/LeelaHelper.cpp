@@ -319,21 +319,17 @@ static void parse_commandline(int argc, const char * const argv[]) {
         }
     }
 #endif
-    if (vm.count("cpu-only")) {
-        cfg_cpu_only = true;
-    }
+
 #else
   cfg_cpu_only = true;
 #endif
 
-  if (cfg_cpu_only) {
-    calculate_thread_count_cpu(vm);
-  } else {
+
 #ifdef USE_OPENCL
     calculate_thread_count_gpu(vm);
         myprintf("Using OpenCL batch size of %d\n", cfg_batch_size);
 #endif
-  }
+
   myprintf("Using %d thread(s).\n", cfg_num_threads);
 
   if (vm.count("seed")) {

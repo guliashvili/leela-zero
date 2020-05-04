@@ -46,7 +46,7 @@
 #include "FastState.h"
 #include "GTP.h"
 #include "GameState.h"
-#include "Network.h"
+//#include "Network.h"
 #include "Utils.h"
 
 using namespace Utils;

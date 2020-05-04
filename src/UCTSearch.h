@@ -42,7 +42,7 @@
 #include "FastState.h"
 #include "GameState.h"
 #include "UCTNode.h"
-#include "Network.h"
+//#include "Network.h"
 
 
 class SearchResult {

@@ -20,28 +20,36 @@ export type Action = Readonly<
       boardIdentifier: number;
     }
 >;
-const reducer = produce((draft: Draft<GameCore>, action: Action) => {
+type Meta = {
+  loadingAnalysis: { [Key: number]: boolean };
+};
+type State = {
+  meta: Meta;
+  core: GameCore;
+};
+
+const reducer = produce((draft: Draft<State>, action: Action) => {
   switch (action.type) {
     case "playMove":
-      draft.moveCurrent(action.move);
+      draft.core.moveCurrent(action.move);
       break;
     case "back":
-      draft.moveBackwards();
+      draft.core.moveBackwards();
       break;
     case "genAnalysis":
-      BackEndBird.getNextSuggestedMove(draft);
+      BackEndBird.getNextSuggestedMove(draft.core);
       break;
     case "forward":
-      draft.moveForward();
+      draft.core.moveForward();
       break;
     case "mouse":
-      draft.setMouse(action.point);
+      draft.core.setMouse(action.point);
       break;
     case "pendingRecommendation":
-      draft.isPendingRecommendation = true;
+      draft.core.isPendingRecommendation = true;
       break;
     case "addSuggestion":
-      draft.updateAnalysis(
+      draft.core.updateAnalysis(
         action.playouts,
         action.winningChance,
         action.moves.map((move) => new Point(move.x, move.y)),
@@ -52,13 +60,16 @@ const reducer = produce((draft: Draft<GameCore>, action: Action) => {
   }
 });
 
-const initialState = new GameCore(
-  19,
-  new Player(Color.BLACK, PointState.BLACK),
-  new Player(Color.WHITE, PointState.WHITE)
-);
+const initialState = {
+  core: new GameCore(
+    19,
+    new Player(Color.BLACK, PointState.BLACK),
+    new Player(Color.WHITE, PointState.WHITE)
+  ),
+  meta: { loadingAnalysis: {} },
+};
 type GoStateContextProps = {
-  gameState: GameCore;
+  gameState: State;
   dispatch(action: Action): void;
 };
 export const GoStateContext = createContext<GoStateContextProps>({

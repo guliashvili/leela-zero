@@ -7,7 +7,7 @@ import SubtitlesIcon from "@material-ui/icons/Subtitles";
 import { BackEndBird } from "../../BackEndBird";
 export const Controller = () => {
   const { gameState, dispatch } = useContext(GoStateContext);
-  const winningChance = gameState.getCurrentBoardState().analysis
+  const winningChance = gameState.core.getCurrentBoardState().analysis
     ?.winningChance;
   return (
     <div>
@@ -20,7 +20,7 @@ export const Controller = () => {
       </IconButton>
       <IconButton
         onClick={() => {
-          BackEndBird.getNextSuggestedMove(gameState);
+          BackEndBird.getNextSuggestedMove(gameState.core);
         }}
       >
         <SubtitlesIcon />

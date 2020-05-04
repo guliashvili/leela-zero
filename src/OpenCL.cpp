@@ -45,7 +45,6 @@
 #include <string>
 
 #include "OpenCL.h"
-#include "Network.h"
 #include "GTP.h"
 #include "Utils.h"
 #include "Tuner.h"

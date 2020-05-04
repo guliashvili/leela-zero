@@ -32,7 +32,6 @@
 
 #include "GTP.h"
 #include "Random.h"
-#include "Network.h"
 #include "Utils.h"
 #include "OpenCLScheduler.h"
 

@@ -56,7 +56,6 @@
 #include "zlib.h"
 
 #include "Network.h"
-#include "CPUPipe.h"
 #ifdef USE_OPENCL
 #include "OpenCLScheduler.h"
 #include "UCTNode.h"
@@ -557,11 +556,6 @@ void Network::initialize(int playouts, const std::string & weightsfile) {
         m_fwd_weights->m_conv_pol_b[i] = 0.0f;
     }
 
-#ifdef USE_OPENCL
-    if (cfg_cpu_only) {
-        myprintf("Initializing CPU-only evaluation.\n");
-        m_forward = init_net(channels, std::make_unique<CPUPipe>());
-    } else {
 #ifdef USE_OPENCL_SELFCHECK
         // initialize CPU reference first, so that we can self-check
         // when doing fp16 vs. fp32 detections
@@ -576,12 +570,7 @@ void Network::initialize(int playouts, const std::string & weightsfile) {
         m_forward = init_net(channels,
                              std::make_unique<OpenCLScheduler<float>>());
 #endif
-    }
 
-#else //!USE_OPENCL
-    myprintf("Initializing CPU-only evaluation.\n");
-    m_forward = init_net(channels, std::make_unique<CPUPipe>());
-#endif
 
     // Need to estimate size before clearing up the pipe.
     get_estimated_size();
