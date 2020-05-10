@@ -1,6 +1,20 @@
-* User identifier, right now socket.io sends everything to everyone
+Capability
+* Allow multiple users to use the website
+  * User identifier, right now socket.io sends everything to everyone
+* CI/CD to AWS
+* Add other engines ( KataGo)
+* Customize time to wait
+* Select focus area
+* Add game branching
+  * Add time left for analysis
+* Login by gmail
+* Payment
+* History of games explored
+* Historical matches DB analysed
+* Explore ways to explain analysis
+
+Feel
 * Make board larger
 * Add music
 * Add 3d feeling of the board
 * [low pri] Make 2 player
-*
