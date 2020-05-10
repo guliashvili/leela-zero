@@ -24,7 +24,6 @@ export const Hover = (props: Props) => {
         return imgPieceWhiteTransparent;
     }
   })();
-  console.log("well", imageObj.src);
 
   return <KonvaImage x={props.x} y={props.y} image={imageObj} />;
 };

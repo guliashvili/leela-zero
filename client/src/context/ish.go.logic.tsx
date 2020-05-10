@@ -88,7 +88,6 @@ export class GameCore {
     boardIdentifier: number,
     isPropagated: boolean
   ): void {
-    console.log("updatea", boardIdentifier);
     const move = moves.shift();
     if (move === undefined) {
       return;
