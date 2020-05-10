@@ -5,16 +5,11 @@ import imgPieceBlackTransparent from "../../../../imgs/piece-black-transparent.p
 import imgPieceWhiteTransparent from "../../../../imgs/piece-white-transparent.png";
 
 type Props = Readonly<{
-  isHover: boolean;
   currentColor: Color;
   x: number;
   y: number;
 }>;
 export const Hover = (props: Props) => {
-  if (!props.isHover) {
-    return null;
-  }
-
   const imageObj = new Image();
   imageObj.src = (function () {
     switch (props.currentColor) {

@@ -95,8 +95,6 @@ export const Board = (props: Props): JSX.Element => {
       <Layer listening={false}>
         {gameState.core.mousePoint == null ? null : (
           <Hover
-            isHover={true}
-            // key={`hover-${i}`}
             currentColor={
               gameState.core.getCurrentBoardState().currentPlayer.color
             }
