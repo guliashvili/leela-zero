@@ -9,7 +9,6 @@ import { Hover } from "./unit/Hover";
 import { GoStateContext } from "../../../context/GoState";
 import imgBoard from "../../../imgs/board.png";
 import { Point, PointState } from "../../../context/ish.go";
-import { isEqual } from "lodash";
 
 type Props = Readonly<{ boardSize: number }>;
 const PIECE_SIZE = 27;
