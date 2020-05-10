@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import Konva from "konva";
 import { Image, Layer, Stage } from "react-konva";
 
@@ -17,12 +17,15 @@ const BOARD_PADDING = 6;
 
 export const Board = (props: Props): JSX.Element => {
   const [background] = useImage(imgBoard);
-  const { dispatch: dispatchGo, gameState } = useContext(GoStateContext);
+  const { dispatch, gameState } = useContext(GoStateContext);
+  useEffect(() => {
+    dispatch({ type: "genAnalysis" });
+  }, [gameState.core.getCurrentBoardState().index]);
   function onClick(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
-    dispatchGo({ type: "playMove", move: point });
+    dispatch({ type: "playMove", move: point });
   }
   function onMouseEnter(point: Point, evt: Konva.KonvaEventObject<MouseEvent>) {
-    dispatchGo({
+    dispatch({
       type: "mouse",
       point:
         gameState.core.at(
@@ -38,7 +41,7 @@ export const Board = (props: Props): JSX.Element => {
     <Stage
       width={props.boardSize}
       height={props.boardSize}
-      onMouseLeave={() => dispatchGo({ type: "mouse", point: null })}
+      onMouseLeave={() => dispatch({ type: "mouse", point: null })}
     >
       <Layer listening={false}>
         <Image image={background} />
@@ -90,25 +93,16 @@ export const Board = (props: Props): JSX.Element => {
         )}
       </Layer>
       <Layer listening={false}>
-        {[...Array(gameState.core.boardSize * gameState.core.boardSize)].map(
-          (_, i) => {
-            const point = new Point(
-              i % gameState.core.boardSize,
-              Math.floor(i / gameState.core.boardSize)
-            );
-
-            return (
-              <Hover
-                isHover={isEqual(gameState.core.mousePoint, point)}
-                key={`hover-${i}`}
-                currentColor={
-                  gameState.core.getCurrentBoardState().currentPlayer.color
-                }
-                x={point.row * PIECE_SIZE + BOARD_PADDING}
-                y={point.column * PIECE_SIZE + BOARD_PADDING}
-              />
-            );
-          }
+        {gameState.core.mousePoint == null ? null : (
+          <Hover
+            isHover={true}
+            // key={`hover-${i}`}
+            currentColor={
+              gameState.core.getCurrentBoardState().currentPlayer.color
+            }
+            x={gameState.core.mousePoint.row * PIECE_SIZE + BOARD_PADDING}
+            y={gameState.core.mousePoint.column * PIECE_SIZE + BOARD_PADDING}
+          />
         )}
       </Layer>
     </Stage>

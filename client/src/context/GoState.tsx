@@ -44,6 +44,7 @@ const reducer = produce((draft: Draft<State>, action: Action) => {
       break;
     case "mouse":
       draft.core.setMouse(action.point);
+      console.log("mouse ", draft.core.mousePoint);
       break;
     case "pendingRecommendation":
       draft.core.isPendingRecommendation = true;

@@ -9,15 +9,15 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 const server = require("http").createServer(app);
 const io = require("socket.io").listen(port2);
-app.post("/suggested_move", async function (req, res) {
-  const { boardIdentifier, moves } = req.body;
-  const data = await axios.post("http://127.0.0.1:1999/json", {
-    moves,
-    boardIdentifier,
-    commandSpec: { command: "z" },
-  });
 
-  return res.json(data.data);
+io.on("connection", (socket) => {
+  socket.on("suggested_move", async ({ boardIdentifier, moves }) => {
+    await axios.post("http://127.0.0.1:1999/json", {
+      moves,
+      boardIdentifier,
+      commandSpec: { command: "z" },
+    });
+  });
 });
 
 app.post("/live_data", async function (req, res) {

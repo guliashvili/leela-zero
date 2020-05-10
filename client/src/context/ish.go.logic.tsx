@@ -24,7 +24,7 @@ export class GameCore {
   player2: Player;
   boardSize: number;
   currentBoard: number;
-  boards: BoardState[];
+  _boards: BoardState[];
   mousePoint: Point | null;
   isPendingRecommendation: boolean;
 
@@ -43,7 +43,7 @@ export class GameCore {
     (this.player2 = player2),
       (this.boardSize = boardSize),
       (this.currentBoard = 0),
-      (this.boards = [
+      (this._boards = [
         {
           children: [],
           nextHint: null,
@@ -54,6 +54,9 @@ export class GameCore {
           analysis: null,
         },
       ]);
+  }
+  getBoard(boardID: number): BoardState {
+    return this._boards[boardID];
   }
   setMouse(point: Point | null): void {
     if (
@@ -72,7 +75,7 @@ export class GameCore {
     if (child === undefined) {
       return null;
     }
-    const analysis = this.boards[child.state].analysis;
+    const analysis = this.getBoard(child.state).analysis;
     if (analysis === null) {
       return null;
     }
@@ -85,12 +88,13 @@ export class GameCore {
     boardIdentifier: number,
     isPropagated: boolean
   ): void {
+    console.log("updatea", boardIdentifier);
     const move = moves.shift();
     if (move === undefined) {
       return;
     }
 
-    const board = this.boards[boardIdentifier];
+    const board = this.getBoard(boardIdentifier);
     if (
       board.analysis == null ||
       (board.analysis.isPropagated && !isPropagated) ||
@@ -110,7 +114,7 @@ export class GameCore {
     }
   }
   getCurrentBoardState(): BoardState {
-    return this.boards[this.currentBoard];
+    return this.getBoard(this.currentBoard);
   }
   at(board: PointState[][], point: Point): PointState {
     return board[point.column][point.row];
@@ -209,6 +213,10 @@ export class GameCore {
     }
   }
 
+  getNewBoardID(_board: PointState[][]): number {
+    return this._boards.length;
+  }
+
   move(boardState: BoardState, point: Point): MoveError | number {
     const child = boardState.children.find((child) =>
       isEqual(child.move, point)
@@ -237,13 +245,13 @@ export class GameCore {
       back: boardState.index,
       currentPlayer: player,
       board: newBoard,
-      index: this.boards.length,
+      index: this.getNewBoardID(newBoard),
       analysis: null,
     };
 
     const error = this._isValidMove(
       newCurrentBoardState,
-      boardState.back === null ? null : this.boards[boardState.back],
+      boardState.back === null ? null : this.getBoard(boardState.back),
       point
     );
     if (error !== undefined) {
@@ -252,7 +260,7 @@ export class GameCore {
 
     boardState.children.push({
       move: point,
-      state: this.boards.push(newCurrentBoardState) - 1,
+      state: this._boards.push(newCurrentBoardState) - 1,
     });
 
     if (boardState.children.length === 1) {
@@ -271,15 +279,15 @@ export class GameCore {
   }
 
   moveBackwards(): void {
-    const currentBoard = this.boards[this.currentBoard];
+    const currentBoard = this.getCurrentBoardState();
     const backBoardState = currentBoard.back;
     if (backBoardState !== null) {
-      this.boards[backBoardState].nextHint = currentBoard.index;
+      this.getBoard(backBoardState).nextHint = currentBoard.index;
       this.currentBoard = backBoardState;
     }
   }
   moveForward(): void {
-    const currentBoard = this.boards[this.currentBoard];
+    const currentBoard = this.getCurrentBoardState();
     this.currentBoard = currentBoard.nextHint ?? this.currentBoard;
   }
 }

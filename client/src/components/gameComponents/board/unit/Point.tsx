@@ -1,6 +1,5 @@
 import React from "react";
-import useImage from "use-image";
-import { Image } from "react-konva";
+import { Image as KonvaImage } from "react-konva";
 import { Point as RealPoint, PointState } from "../../../../context/ish.go";
 import Konva from "konva";
 import imgPieceBlack from "../../../../imgs/piece-black.png";
@@ -12,6 +11,7 @@ type Props = Readonly<{
   x: number;
   y: number;
   point: RealPoint;
+  key: string;
   onClick: (point: RealPoint, evt: Konva.KonvaEventObject<MouseEvent>) => void;
   onMouseEnter: (
     point: RealPoint,
@@ -19,28 +19,25 @@ type Props = Readonly<{
   ) => void;
 }>;
 export const Point = (props: Props) => {
-  const [image] = useImage(
-    (function () {
-      switch (props.state) {
-        case PointState.EMPTY:
-          return imgTransparent;
-        case PointState.BLACK:
-          return imgPieceBlack;
-        case PointState.WHITE:
-          return imgPieceWhite;
-      }
-    })()
-  );
-  if (image == null) {
-    return null;
-  }
+  const imageObj = new Image();
+  imageObj.src = (function () {
+    switch (props.state) {
+      case PointState.EMPTY:
+        return imgTransparent;
+      case PointState.BLACK:
+        return imgPieceBlack;
+      case PointState.WHITE:
+        return imgPieceWhite;
+    }
+  })();
 
   return (
-    <Image
+    <KonvaImage
+      key={props.key}
       listening={true}
       x={props.x}
       y={props.y}
-      image={image}
+      image={imageObj}
       onClick={(evt) => props.onClick(props.point, evt)}
       onMouseEnter={(evt) => props.onMouseEnter(props.point, evt)}
     />

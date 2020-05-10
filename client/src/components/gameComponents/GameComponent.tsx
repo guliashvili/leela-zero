@@ -2,12 +2,13 @@ import React, { useContext, useEffect } from "react";
 import { Board } from "./board/Board";
 import { Controller } from "./Controller";
 import { GoStateContext } from "../../context/GoState";
-import openSocket from "socket.io-client";
+import { socket } from "../../BackEndBird";
 
+console.log("im here");
 export const GameComponent = () => {
   const { dispatch } = useContext(GoStateContext);
   useEffect(() => {
-    const socket = openSocket("http://localhost:9000");
+    console.log("sockeet");
     socket.on("live playout", (data) => {
       dispatch({ type: "addSuggestion", ...data });
     });
