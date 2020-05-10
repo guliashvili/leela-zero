@@ -6,25 +6,18 @@
 #include "Poco/Util/ServerApplication.h"
 #include "Poco/JSON/Parser.h"
 #include <future>
-
-// Added for the default_resource example
-
 #include <fstream>
 #include <vector>
-
 #include <mutex>
-using namespace std;
 #include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
 #include "config.h"
-
 #include <boost/program_options.hpp>
 #include <memory>
 #include <string>
 #include "LeelaHelper.h"
 #include "GTP.h"
-
+using namespace std;
+using json = nlohmann::json;
 using namespace Utils;
 using namespace Poco;
 using namespace Poco::Net;
@@ -68,6 +61,7 @@ class HelloRequestHandler: public HTTPRequestHandler
         game->play_move((int) !isBlack, vertex);
       }
       boardIdentifier = objectRequest->getValue<std::string>("boardIdentifier");
+      clientIdentifier = objectRequest->getValue<std::string>("clientIdentifier");
 
       const auto commandSpec = objectRequest->getObject("commandSpec");
       const auto command = commandSpec->getValue<string>("command");

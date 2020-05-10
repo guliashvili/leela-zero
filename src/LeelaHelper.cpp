@@ -22,6 +22,7 @@ using namespace Utils;
 using namespace std;
 
 std::string boardIdentifier;
+std::string clientIdentifier;
 
 static void license_blurb() {
   printf(
@@ -566,5 +567,5 @@ void ofPostRequest(string url, string body) {
   }
 }
 void leelaProcessNews(std::string line) {
-  ofPostRequest("http://127.0.0.1/live_data", json({{"line",  line}, {"boardIdentifier", boardIdentifier}}).dump());
+  ofPostRequest("http://127.0.0.1/live_data", json({{"line",  line}, {"boardIdentifier", boardIdentifier}, {"clientIdentifier", clientIdentifier}}).dump());
 }

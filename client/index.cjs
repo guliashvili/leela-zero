@@ -15,6 +15,7 @@ io.on("connection", (socket) => {
     await axios.post("http://127.0.0.1:1999/json", {
       moves,
       boardIdentifier,
+      clientIdentifier: socket.id,
       commandSpec: { command: "z" },
     });
   });
@@ -22,7 +23,7 @@ io.on("connection", (socket) => {
 
 app.post("/live_data", async function (req, res) {
   const line = req.body.line.trim();
-  const boardIdentifier = req.body.boardIdentifier;
+  const { boardIdentifier, clientIdentifier } = req.body;
 
   const thinkingRe = /(?:Thinking at most )(.*)(?: seconds)/g;
   const l1 = thinkingRe.exec(line);
@@ -43,7 +44,10 @@ app.post("/live_data", async function (req, res) {
   console.log({ line, l1, l2, l3 });
 
   if (thinking != null) {
-    io.sockets.emit("live thinking", { boardIdentifier, thinking });
+    io.to(clientIdentifier).emit("live thinking", {
+      boardIdentifier,
+      thinking,
+    });
   } else if (playoutsNum != null && winRatio != null && moves != null) {
     const data = {
       boardIdentifier,
@@ -57,7 +61,7 @@ app.post("/live_data", async function (req, res) {
         };
       }),
     };
-    io.sockets.emit("live playout", data);
+    io.to(clientIdentifier).emit("live playout", data);
   }
 });
 
