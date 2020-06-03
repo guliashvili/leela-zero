@@ -117,7 +117,7 @@ target_link_libraries(server ${ZLIB_LIBRARIES})
 target_link_libraries(server ${CONAN_LIBS})
 
 set_target_properties(server PROPERTIES
-        CXX_STANDARD 20
+        CXX_STANDARD 14
         CXX_EXTENSIONS ON
         )
 
