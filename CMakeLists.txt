@@ -88,7 +88,6 @@ set(IncludePath "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(SrcPath "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 include_directories(${IncludePath})
-include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OpenCL_INCLUDE_DIRS})
 include_directories(${ZLIB_INCLUDE_DIRS})
 
