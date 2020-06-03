@@ -4,6 +4,7 @@ nlohmann_json/3.7.3
 eigen/3.3.7
 gtest/1.10.0
 khronos-opencl-clhpp/20191105@bincrafters/stable
+boost/1.71.0
 
 [generators]
 cmake

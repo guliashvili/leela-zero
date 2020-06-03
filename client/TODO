@@ -1,6 +1,9 @@
 Capability
 [+] Allow multiple users to use the website
   * User identifier, right now socket.io sends everything to everyone
+[-] Support refresh
+    * backend sync whole data
+    * Redirect socket.io https://stackoverflow.com/questions/28930559/handle-browser-refresh-socket-io
 [-] CI/CD to AWS
 [-] Add other engines ( KataGo)
 [-] Customize time to wait

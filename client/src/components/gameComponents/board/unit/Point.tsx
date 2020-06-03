@@ -11,7 +11,6 @@ type Props = Readonly<{
   x: number;
   y: number;
   point: RealPoint;
-  key: string;
   onClick: (point: RealPoint, evt: Konva.KonvaEventObject<MouseEvent>) => void;
   onMouseEnter: (
     point: RealPoint,
@@ -33,7 +32,6 @@ export const Point = (props: Props) => {
 
   return (
     <KonvaImage
-      key={props.key}
       listening={true}
       x={props.x}
       y={props.y}

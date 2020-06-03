@@ -22,9 +22,6 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 # Required Packages
-set(Boost_MIN_VERSION "1.58.0")
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.58.0 REQUIRED program_options filesystem)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenCL REQUIRED)
@@ -114,7 +111,6 @@ add_library(objs OBJECT ${leelaz_SRC})
 # HTTP server
 add_executable(server ${server_MAIN} $<TARGET_OBJECTS:objs>)
 
-target_link_libraries(server ${Boost_LIBRARIES})
 target_link_libraries(server ${BLAS_LIBRARIES})
 target_link_libraries(server ${OpenCL_LIBRARIES})
 target_link_libraries(server ${ZLIB_LIBRARIES})
@@ -133,7 +129,6 @@ if(GccSpecificFlags)
     target_compile_options(tests PRIVATE "-Wno-unused-variable")
 endif()
 
-target_link_libraries(tests ${Boost_LIBRARIES})
 target_link_libraries(tests ${BLAS_LIBRARIES})
 target_link_libraries(tests ${OpenCL_LIBRARIES})
 target_link_libraries(tests ${ZLIB_LIBRARIES})
