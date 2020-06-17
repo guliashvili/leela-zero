@@ -37,7 +37,7 @@ class HelloRequestHandler: public HTTPRequestHandler
       auto parserRequest = parser.parse(request.stream());
       Object::Ptr objectRequest = parserRequest.extract<Object::Ptr>();
 
-      char* z[4] = {"self", "-w","/Users/gguli/Desktop/25134cb83e2be1166e1bd9ee160d9e6a8fcc32f0a843242461681a340bd93e17", "--noponder"};
+      char* z[4] = {"self", "-w","best-network", "--noponder"};
 
       static std::mutex g_pages_mutex;
 
