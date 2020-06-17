@@ -1,7 +1,7 @@
 import { GameCore } from "./context/ish.go.logic";
 import { Color } from "./context/ish.go";
 import openSocket from "socket.io-client";
-export const socket = openSocket("http://localhost:9000");
+export const socket = openSocket(`http://${window.location.hostname}:9000`);
 
 export namespace BackEndBird {
   export function getNextSuggestedMove(gameCore: GameCore): void {
